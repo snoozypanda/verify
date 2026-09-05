@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Nexel Pays — Payment Verifier</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet"
+    >
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <!-- =====================================================
+         LOGIN PAGE
+    ====================================================== -->
+
+    <section id="loginPage" class="login-page">
+
+        <div class="login-glow glow-one"></div>
+        <div class="login-glow glow-two"></div>
+
+        <div class="login-card">
+
+            <!-- BRAND -->
+
+            <div class="brand login-brand">
+
+                <div class="brand-mark">
+                    N
+                </div>
+
+                <div>
+                    <div class="brand-name">
+                        NEXEL
+                    </div>
+
+                    <div class="brand-sub">
+                        PAYS
+                    </div>
+                </div>
+
+            </div>
+
+
+            <!-- LOGIN HEADING -->
+
+            <div class="login-heading">
+
+                <span class="eyebrow">
+                    PRIVATE PAYMENT SYSTEM
+                </span>
+
+                <h1>
+                    Payment Verifier
+                </h1>
+
+                <p>
+                    Secure access to the Nexel Pays transaction verification portal.
+                </p>
+
+            </div>
+
+
+            <!-- LOGIN FORM -->
+
+            <form id="loginForm">
+
+                <!-- USERNAME -->
+
+                <div class="field">
+
+                    <label for="username">
+                        Username
+                    </label>
+
+                    <div class="input-wrap">
+
+                        <span class="input-icon">
+                            ◉
+                        </span>
+
+                        <input
+                            id="username"
+                            name="username"
+                            type="text"
+                            placeholder="Enter username"
+                            autocomplete="username"
+                            required
+                        >
+
+                    </div>
+
+                </div>
+
+
+                <!-- PASSWORD -->
+
+                <div class="field">
+
+                    <label for="password">
+                        Password
+                    </label>
+
+                    <div class="input-wrap">
+
+                        <span class="input-icon">
+                            ◆
+                        </span>
+
+                        <input
+                            id="password"
+                            name="password"
+                            type="password"
+                            placeholder="Enter password"
+                            autocomplete="current-password"
+                            required
+                        >
+
+                    </div>
+
+                </div>
+
+
+                <!-- LOGIN BUTTON -->
+
+                <button
+                    id="loginButton"
+                    class="primary-button login-button"
+                    type="submit"
+                >
+
+                    <span>
+                        Access Dashboard
+                    </span>
+
+                    <span class="button-arrow">
+                        →
+                    </span>
+
+                </button>
+
+
+                <!-- LOGIN ERROR -->
+
+                <div
+                    id="loginError"
+                    class="error-message"
+                    role="alert"
+                ></div>
+
+            </form>
+
+
+            <!-- LOGIN FOOTER -->
+
+            <div class="login-footer">
+
+                <span class="security-dot"></span>
+
+                Protected private environment
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+
+    <!-- =====================================================
+         DASHBOARD PAGE
+    ====================================================== -->
+
+    <section
+        id="dashboardPage"
+        class="dashboard-page hidden"
+    >
+
+        <!-- =================================================
+             SIDEBAR
+        ================================================== -->
+
+        <aside class="sidebar">
+
+            <!-- SIDEBAR BRAND -->
+
+            <div class="sidebar-brand">
+
+                <div class="brand-mark">
+                    N
+                </div>
+
+                <div>
+
+                    <div class="brand-name">
+                        NEXEL
+                    </div>
+
+                    <div class="brand-sub">
+                        PAYS
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- SIDEBAR LABEL -->
+
+            <div class="sidebar-label">
+                PAYMENT OPERATIONS
+            </div>
+
+
+            <!-- NAVIGATION -->
+
+            <nav>
+
+                <button
+                    class="nav-item active"
+                    type="button"
+                >
+
+                    <span class="nav-icon">
+                        ◇
+                    </span>
+
+                    Payment Verifier
+
+                </button>
+
+            </nav>
+
+
+            <!-- SIDEBAR BOTTOM -->
+
+            <div class="sidebar-bottom">
+
+                <!-- SECURE SESSION -->
+
+                <div class="secure-box">
+
+                    <div class="secure-icon">
+                        ✓
+                    </div>
+
+                    <div>
+
+                        <strong>
+                            Secure Session
+                        </strong>
+
+                        <small>
+                            System protected
+                        </small>
+
+                    </div>
+
+                </div>
+
+
+                <!-- LOGOUT -->
+
+                <button
+                    id="logoutButton"
+                    class="logout-button"
+                    type="button"
+                >
+
+                    <span>
+                        ↪
+                    </span>
+
+                    Logout
+
+                </button>
+
+            </div>
+
+        </aside>
+
+
+
+        <!-- =================================================
+             MAIN CONTENT
+        ================================================== -->
+
+        <main class="main-content">
+
+            <!-- TOPBAR -->
+
+            <header class="topbar">
+
+                <div>
+
+                    <div class="breadcrumb">
+                        NEXEL PAYS / OPERATIONS
+                    </div>
+
+                    <h2>
+                        Payment Verifier
+                    </h2>
+
+                </div>
+
+
+                <div class="topbar-status">
+
+                    <span class="status-dot"></span>
+
+                    System Online
+
+                </div>
+
+            </header>
+
+
+
+            <!-- CONTENT -->
+
+            <div class="content">
+
+                <!-- =================================================
+                     HERO
+                ================================================== -->
+
+                <section class="hero-card">
+
+                    <div class="hero-text">
+
+                        <span class="eyebrow">
+                            TELEBIRR VERIFICATION
+                        </span>
+
+                        <h1>
+                            Verify a payment.
+                            <span>Instantly.</span>
+                        </h1>
+
+                        <p>
+                            Enter a Telebirr transaction ID to retrieve the official
+                            transaction information and validate its payment status.
+                        </p>
+
+                    </div>
+
+
+                    <div class="hero-orb">
+
+                        <div class="orb-inner">
+
+                            <span>
+                                ✓
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                </section>
+
+
+
+                <!-- =================================================
+                     VERIFICATION CARD
+                ================================================== -->
+
+                <section class="verify-card">
+
+                    <!-- CARD HEADER -->
+
+                    <div class="card-header">
+
+                        <div>
+
+                            <span class="card-number">
+                                01
+                            </span>
+
+                            <h3>
+                                Transaction Verification
+                            </h3>
+
+                            <p>
+                                Enter the transaction ID exactly as shown on the Telebirr receipt.
+                            </p>
+
+                        </div>
+
+
+                        <div class="live-badge">
+
+                            <span></span>
+
+                            LIVE
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- VERIFICATION FORM -->
+
+                    <form id="verifyForm">
+
+                        <div class="transaction-input">
+
+                            <!-- TRANSACTION ICON -->
+
+                            <div class="transaction-icon">
+                                #
+                            </div>
+
+
+                            <!-- TRANSACTION FIELD -->
+
+                            <div class="transaction-field">
+
+                                <label for="transactionId">
+                                    Telebirr Transaction ID
+                                </label>
+
+                                <input
+                                    id="transactionId"
+                                    name="transactionId"
+                                    type="text"
+                                    placeholder="e.g. DI51GBC7HD"
+                                    autocomplete="off"
+                                    required
+                                >
+
+                            </div>
+
+
+                            <!-- VERIFY BUTTON -->
+
+                            <button
+                                id="verifyButton"
+                                class="verify-button"
+                                type="submit"
+                            >
+
+                                <span id="verifyButtonText">
+                                    Verify Payment
+                                </span>
+
+                                <span class="button-arrow">
+                                    →
+                                </span>
+
+                            </button>
+
+                        </div>
+
+                    </form>
+
+
+                    <!-- FORM NOTE -->
+
+                    <div class="form-note">
+
+                        <span>
+                            ⓘ
+                        </span>
+
+                        Verification is performed against the official Telebirr receipt information.
+
+                    </div>
+
+                </section>
+
+
+
+                <!-- =================================================
+                     RESULT SECTION
+                ================================================== -->
+
+                <section
+                    id="resultSection"
+                    class="result-section hidden"
+                >
+
+                    <!-- =================================================
+                         RESULT CARD
+                    ================================================== -->
+
+                    <div
+                        id="resultCard"
+                        class="result-card"
+                    >
+
+                        <!-- RESULT HEADER -->
+
+                        <div class="result-header">
+
+                            <div class="result-status">
+
+                                <!-- RESULT ICON -->
+
+                                <div
+                                    id="resultIcon"
+                                    class="result-icon"
+                                >
+                                    ✓
+                                </div>
+
+
+                                <!-- RESULT TEXT -->
+
+                                <div>
+
+                                    <span
+                                        id="resultLabel"
+                                        class="result-label"
+                                    >
+                                        PAYMENT VERIFIED
+                                    </span>
+
+
+                                    <h3 id="resultTitle">
+                                        Transaction successfully verified
+                                    </h3>
+
+
+                                    <p id="resultDescription">
+                                        The transaction passed all verification checks.
+                                    </p>
+
+                                </div>
+
+                            </div>
+
+
+                            <!-- RESULT BADGE -->
+
+                            <div
+                                id="resultBadge"
+                                class="result-badge"
+                            >
+                                VERIFIED
+                            </div>
+
+                        </div>
+
+
+
+                        <!-- =================================================
+                             VERIFICATION CHECKS
+                        ================================================== -->
+
+                        <div class="checks-grid">
+
+                            <!-- TRANSACTION FOUND -->
+
+                            <div
+                                id="checkTransaction"
+                                class="check-item"
+                            >
+
+                                <div class="check-icon">
+                                    ✓
+                                </div>
+
+                                <div class="check-content">
+
+                                    <span>
+                                        Transaction Found
+                                    </span>
+
+                                    <strong>
+                                        Passed
+                                    </strong>
+
+                                </div>
+
+                            </div>
+
+
+                            <!-- TRANSACTION COMPLETED -->
+
+                            <div
+                                id="checkStatus"
+                                class="check-item"
+                            >
+
+                                <div class="check-icon">
+                                    ✓
+                                </div>
+
+                                <div class="check-content">
+
+                                    <span>
+                                        Transaction Completed
+                                    </span>
+
+                                    <strong>
+                                        Passed
+                                    </strong>
+
+                                </div>
+
+                            </div>
+
+
+                            <!-- SETTLEMENT ACCOUNT -->
+
+                            <div
+                                id="checkSettlement"
+                                class="check-item"
+                            >
+
+                                <div class="check-icon">
+                                    ✓
+                                </div>
+
+                                <div class="check-content">
+
+                                    <span>
+                                        Settlement Account
+                                    </span>
+
+                                    <strong>
+                                        Matched
+                                    </strong>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+
+                    <!-- =================================================
+                         RECEIPT CARD
+                    ================================================== -->
+
+                    <div
+                        id="receiptCard"
+                        class="receipt-card"
+                    >
+
+                        <!-- RECEIPT HEADER -->
+
+                        <div class="receipt-header">
+
+                            <div>
+
+                                <span class="card-number">
+                                    02
+                                </span>
+
+                                <h3>
+                                    Transaction Details
+                                </h3>
+
+                            </div>
+
+
+                            <div class="receipt-brand">
+                                telebirr
+                            </div>
+
+                        </div>
+
+
+                        <!-- RECEIPT DETAILS -->
+
+                        <div
+                            id="receiptDetails"
+                            class="receipt-details"
+                        ></div>
+
+                    </div>
+
+                </section>
+
+
+
+                <!-- =================================================
+                     FOOTER
+                ================================================== -->
+
+                <footer class="dashboard-footer">
+
+                    <div>
+
+                        <strong>
+                            NEXEL PAYS
+                        </strong>
+
+                        <span>
+                            Private Payment Operations
+                        </span>
+
+                    </div>
+
+
+                    <span>
+                        Payment Verification Portal
+                    </span>
+
+                </footer>
+
+            </div>
+
+        </main>
+
+    </section>
+
+
+
+    <!-- =====================================================
+         JAVASCRIPT
+         Version number forces Chrome to load the newest file.
+    ====================================================== -->
+
+    <script src="app.js?v=4"></script>
+
+</body>
+</html>
