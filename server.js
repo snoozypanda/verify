@@ -3,6 +3,7 @@ require("dotenv").config();
 const express = require("express");
 const session = require("express-session");
 const path = require("path");
+const https = require("https");
 
 const { loadReceipt, parseFromHTML } = require("./index");
 
@@ -437,6 +438,174 @@ app.post("/api/logout", (req, res) => {
                 "Logged out successfully."
         });
     });
+});
+
+
+/* =========================================================
+   TEMPORARY TELEBIRR CONNECTIVITY TEST
+========================================================= */
+
+app.get("/api/telebirr-test", (req, res) => {
+
+    const url =
+        "https://transactioninfo.ethiotelecom.et/receipt/DI52GY7RUI";
+
+
+    console.log("");
+
+    console.log(
+        "========== TELEBIRR CONNECTIVITY TEST =========="
+    );
+
+    console.log(
+        "Testing:",
+        url
+    );
+
+
+    const start =
+        Date.now();
+
+
+    const request =
+        https.get(
+            url,
+            {
+                headers: {
+
+                    "User-Agent":
+                        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/151.0.0.0 Safari/537.36",
+
+                    "Accept":
+                        "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+
+                    "Accept-Language":
+                        "en-US,en;q=0.9"
+                }
+            },
+            response => {
+
+                const elapsed =
+                    Date.now() - start;
+
+
+                console.log(
+                    "HTTP status:",
+                    response.statusCode
+                );
+
+
+                console.log(
+                    "Response time:",
+                    elapsed,
+                    "ms"
+                );
+
+
+                /*
+                 * We don't need to read the entire
+                 * receipt for this test.
+                 */
+
+                response.resume();
+
+
+                response.on(
+                    "end",
+                    () => {
+
+                        console.log(
+                            "Telebirr connection test completed."
+                        );
+
+
+                        console.log(
+                            "=============================================="
+                        );
+
+
+                        return res.json({
+
+                            success: true,
+
+                            reachable: true,
+
+                            statusCode:
+                                response.statusCode,
+
+                            responseTimeMs:
+                                elapsed
+                        });
+                    }
+                );
+            }
+        );
+
+
+    /*
+     * Stop the test after 10 seconds.
+     */
+
+    request.setTimeout(
+        10000,
+        () => {
+
+            request.destroy(
+                new Error(
+                    "Telebirr connection timed out after 10 seconds."
+                )
+            );
+        }
+    );
+
+
+    /*
+     * Handle connection errors.
+     */
+
+    request.on(
+        "error",
+        error => {
+
+            const elapsed =
+                Date.now() - start;
+
+
+            console.error(
+                "Telebirr connection error:",
+                error.message
+            );
+
+
+            console.log(
+                "Response time:",
+                elapsed,
+                "ms"
+            );
+
+
+            console.log(
+                "=============================================="
+            );
+
+
+            if (!res.headersSent) {
+
+                return res.status(502).json({
+
+                    success: false,
+
+                    reachable: false,
+
+                    error:
+                        error.message,
+
+                    responseTimeMs:
+                        elapsed
+                });
+            }
+        }
+    );
 });
 
 
