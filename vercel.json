@@ -1,8 +1,4 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "functions": {
-    "index.js": {
-      "regions": ["dxb1"]
-    }
-  }
+  "regions": ["cpt1"]
 }
