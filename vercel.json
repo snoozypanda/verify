@@ -1,9 +1,12 @@
 {
-  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "version": 2,
+  "installCommand": "echo 'no install needed'",
+  "buildCommand": "echo 'no build needed'",
+  "outputDirectory": "public",
   "rewrites": [
     {
-      "source": "/(.*)",
-      "destination": "http://178.104.186.233:3001/$1"
+      "source": "/api/(.*)",
+      "destination": "http://178.104.186.233:3001/api/$1"
     }
   ]
 }
