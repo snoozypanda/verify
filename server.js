@@ -1,49 +1,38 @@
-require("dotenv").config();
-
 const express = require("express");
 const session = require("express-session");
 const path = require("path");
-const https = require("https");
+const BetterSqlite3Store = require("better-sqlite3-session-store")(session);
+const BetterSqlite3 = require("better-sqlite3");
 
-const { loadReceipt, parseFromHTML } = require("./index");
+const {
+    parseFromHTML,
+    loadReceipt
+} = require("./index");
+
+const db = require("./database");
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
+/*
+==========================================
+ADMIN ACCOUNTS
+==========================================
+*/
 
-/* =========================================================
-   ADMIN ACCOUNTS
-   TEMPORARY TEST CREDENTIALS
-   CHANGE THESE BEFORE PRODUCTION
-========================================================= */
+const ADMIN_ACCOUNTS = {
+    "naol.b": "Naol@7898",
+    "zedingle.a": "Zedingle@7898",
+    "abrham.w": "Abrham@7898",
+    "brook.b": "Brook@7898",
+    "suraphel.a": "Suraphel@7898"
+};
 
-const ADMIN_ACCOUNTS = [
-    {
-        username: "naol.b",
-        password: "Naol@7898"
-    },
-    {
-        username: "zedingle.a",
-        password: "Zedingle@7898"
-    },
-    {
-        username: "abrham.w",
-        password: "Abrham@7898"
-    },
-    {
-        username: "brook.b",
-        password: "Brook@7898"
-    },
-    {
-        username: "suraphel.a",
-        password: "Suraphel@7898"
-    }
-];
-
-
-/* =========================================================
-   SETTLEMENT TELEBIRR ACCOUNTS
-========================================================= */
+/*
+==========================================
+APPROVED SETTLEMENT WALLETS
+==========================================
+*/
 
 const SETTLEMENT_WALLETS = [
     "251931121236",
@@ -56,23 +45,30 @@ const SETTLEMENT_WALLETS = [
     "251951662675"
 ];
 
-
-/* =========================================================
-   EXPRESS CONFIGURATION
-========================================================= */
+/*
+==========================================
+MIDDLEWARE
+==========================================
+*/
 
 app.use(express.json());
-
 app.use(
     express.urlencoded({
         extended: true
     })
 );
 
+/*
+==========================================
+SESSION
+==========================================
+*/
 
-/* =========================================================
-   SESSION
-========================================================= */
+const SESSION_DB_PATH = path.join(
+    __dirname,
+    "data",
+    "sessions.db"
+);
 
 app.use(
     session({
@@ -84,22 +80,18 @@ app.use(
 
         saveUninitialized: false,
 
+        store: new BetterSqlite3Store({
+            client: new BetterSqlite3(SESSION_DB_PATH)
+        }),
+
         cookie: {
             httpOnly: true,
-
             secure: false,
-
             sameSite: "lax",
-
             maxAge: 8 * 60 * 60 * 1000
         }
     })
 );
-
-
-/* =========================================================
-   STATIC WEBSITE
-========================================================= */
 
 app.use(
     express.static(
@@ -107,101 +99,90 @@ app.use(
     )
 );
 
-
-/* =========================================================
-   ACCOUNT HELPERS
-========================================================= */
+/*
+==========================================
+ACCOUNT CLEANING
+==========================================
+*/
 
 function cleanAccount(value) {
+    if (
+        value === undefined ||
+        value === null
+    ) {
+        return "";
+    }
 
-    return String(value || "")
+    return String(value)
         .replace(/\s+/g, "")
-        .replace(/[^\d*]/g, "");
+        .replace(/[^\d*+]/g, "");
 }
 
-
 /*
- * Compares a Telebirr receipt account with
- * one of our configured settlement accounts.
- *
- * Supports:
- *
- * Exact:
- * 251931121236
- *
- * Masked:
- * 2519****1236
- *
- * The * characters are treated as wildcards.
- */
+==========================================
+ACCOUNT MATCHING
+==========================================
+*/
 
-function accountMatches(receiptAccount, configuredAccount) {
+function accountMatches(
+    account,
+    wallet
+) {
+    const a = cleanAccount(account);
+    const b = cleanAccount(wallet);
 
-    const receipt =
-        cleanAccount(receiptAccount);
-
-    const configured =
-        cleanAccount(configuredAccount);
-
-
-    if (!receipt || !configured) {
+    if (!a || !b) {
         return false;
     }
 
-
-    /*
-     * Exact match
-     */
-
-    if (receipt === configured) {
+    if (a === b) {
         return true;
     }
 
+    if (a.includes("*")) {
+        const parts = a.split("*");
 
-    /*
-     * A masked account must have
-     * the same length.
-     */
-
-    if (receipt.length !== configured.length) {
-        return false;
-    }
-
-
-    /*
-     * Compare every visible character.
-     *
-     * "*" means unknown/masked character.
-     */
-
-    for (let i = 0; i < receipt.length; i++) {
-
-        if (receipt[i] === "*") {
-            continue;
-        }
-
-        if (receipt[i] !== configured[i]) {
-            return false;
-        }
-    }
-
-
-    return true;
-}
-
-
-/*
- * Find which configured settlement
- * account matches the receipt.
- */
-
-function findSettlementWallet(receiptAccount) {
-
-    for (const wallet of SETTLEMENT_WALLETS) {
+        const prefix = parts[0];
+        const suffix =
+            parts[parts.length - 1];
 
         if (
+            prefix &&
+            suffix &&
+            b.startsWith(prefix) &&
+            b.endsWith(suffix)
+        ) {
+            return true;
+        }
+    }
+
+    if (!a.includes("*")) {
+        if (
+            a.endsWith(b) ||
+            b.endsWith(a)
+        ) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+/*
+==========================================
+FIND APPROVED SETTLEMENT WALLET
+==========================================
+*/
+
+function findSettlementWallet(
+    account
+) {
+    for (
+        const wallet of SETTLEMENT_WALLETS
+    ) {
+        if (
             accountMatches(
-                receiptAccount,
+                account,
                 wallet
             )
         ) {
@@ -212,699 +193,575 @@ function findSettlementWallet(receiptAccount) {
     return null;
 }
 
+/*
+==========================================
+AUTHENTICATION
+==========================================
+*/
 
-/* =========================================================
-   LOGIN MIDDLEWARE
-========================================================= */
-
-function requireLogin(req, res, next) {
-
+function requireLogin(
+    req,
+    res,
+    next
+) {
     if (
-        req.session &&
-        req.session.authenticated === true
+        !req.session ||
+        !req.session.authenticated
     ) {
-        return next();
+        return res.status(401).json({
+            success: false,
+            message:
+                "Authentication required."
+        });
     }
 
-
-    return res.status(401).json({
-
-        success: false,
-
-        message: "Unauthorized"
-    });
+    next();
 }
 
+/*
+==========================================
+HOME
+==========================================
+*/
 
-/* =========================================================
-   HOME PAGE
-========================================================= */
-
-app.get("/", (req, res) => {
-
-    res.sendFile(
-        path.join(
-            __dirname,
-            "public",
-            "index.html"
-        )
-    );
-});
-
-
-/* =========================================================
-   LOGIN
-========================================================= */
-
-app.post("/api/login", (req, res) => {
-
-    const username =
-        String(
-            req.body.username || ""
-        ).trim();
-
-
-    const password =
-        String(
-            req.body.password || ""
+app.get(
+    "/",
+    function (req, res) {
+        res.sendFile(
+            path.join(
+                __dirname,
+                "public",
+                "index.html"
+            )
         );
-
-
-    if (!username || !password) {
-
-        return res.status(400).json({
-
-            success: false,
-
-            message:
-                "Username and password are required."
-        });
     }
+);
 
+/*
+==========================================
+LOGIN
+==========================================
+*/
 
-    const account =
-        ADMIN_ACCOUNTS.find(
-            admin =>
-                admin.username === username &&
-                admin.password === password
-        );
+app.post(
+    "/api/login",
+    function (req, res) {
+        const username =
+            String(
+                req.body.username || ""
+            ).trim();
 
+        const password =
+            String(
+                req.body.password || ""
+            );
 
-    if (!account) {
+        if (
+            !username ||
+            !password
+        ) {
+            return res.status(400).json({
+                success: false,
+                message:
+                    "Username and password are required."
+            });
+        }
 
-        console.log(
-            `Login failed: ${username}`
-        );
+        if (
+            Object.prototype.hasOwnProperty.call(
+                ADMIN_ACCOUNTS,
+                username
+            ) &&
+            ADMIN_ACCOUNTS[
+                username
+            ] === password
+        ) {
+            req.session.authenticated =
+                true;
 
+            req.session.username =
+                username;
+
+            return res.json({
+                success: true,
+                message:
+                    "Login successful.",
+                username:
+                    username
+            });
+        }
 
         return res.status(401).json({
-
             success: false,
-
             message:
-                "Invalid login credentials."
+                "Invalid username or password."
         });
     }
+);
 
+/*
+==========================================
+SESSION CHECK
+==========================================
+*/
 
-    /*
-     * Mark session as authenticated.
-     */
-
-    req.session.authenticated = true;
-
-    req.session.username =
-        account.username;
-
-
-    /*
-     * Explicitly save the session before
-     * sending the response.
-     */
-
-    req.session.save(error => {
-
-        if (error) {
-
-            console.error(
-                "Session save error:",
-                error
-            );
-
-
-            return res.status(500).json({
-
-                success: false,
-
-                message:
-                    "Unable to create login session."
+app.get(
+    "/api/session",
+    function (req, res) {
+        if (
+            req.session &&
+            req.session.authenticated
+        ) {
+            return res.json({
+                success: true,
+                loggedIn: true,
+                authenticated: true,
+                username:
+                    req.session.username ||
+                    ""
             });
         }
 
-
-        console.log(
-            `Login successful: ${account.username}`
-        );
-
-
         return res.json({
-
             success: true,
-
-            message:
-                "Login successful.",
-
-            username:
-                account.username
-        });
-    });
-});
-
-
-/* =========================================================
-   CHECK LOGIN SESSION
-========================================================= */
-
-app.get("/api/session", (req, res) => {
-
-    if (
-        req.session &&
-        req.session.authenticated === true
-    ) {
-
-        return res.json({
-
-            loggedIn: true,
-
-            username:
-                req.session.username
+            loggedIn: false,
+            authenticated: false
         });
     }
+);
 
+/*
+==========================================
+LOGOUT
+==========================================
+*/
 
-    return res.json({
+app.post(
+    "/api/logout",
+    function (req, res) {
+        req.session.destroy(
+            function (error) {
+                if (error) {
+                    console.error(
+                        "Logout error:",
+                        error
+                    );
 
-        loggedIn: false
-    });
-});
-
-
-/* =========================================================
-   LOGOUT
-========================================================= */
-
-app.post("/api/logout", (req, res) => {
-
-    const username =
-        req.session?.username ||
-        "unknown";
-
-
-    req.session.destroy(error => {
-
-        if (error) {
-
-            console.error(
-                "Logout error:",
-                error
-            );
-
-
-            return res.status(500).json({
-
-                success: false,
-
-                message:
-                    "Logout failed."
-            });
-        }
-
-
-        console.log(
-            `Logout: ${username}`
-        );
-
-
-        res.clearCookie(
-            "connect.sid"
-        );
-
-
-        return res.json({
-
-            success: true,
-
-            message:
-                "Logged out successfully."
-        });
-    });
-});
-
-
-/* =========================================================
-   TEMPORARY TELEBIRR CONNECTIVITY TEST
-========================================================= */
-
-app.get("/api/telebirr-test", (req, res) => {
-
-    const url =
-        "https://transactioninfo.ethiotelecom.et/receipt/DI52GY7RUI";
-
-
-    console.log("");
-
-    console.log(
-        "========== TELEBIRR CONNECTIVITY TEST =========="
-    );
-
-    console.log(
-        "Testing:",
-        url
-    );
-
-
-    const start =
-        Date.now();
-
-
-    const request =
-        https.get(
-            url,
-            {
-                headers: {
-
-                    "User-Agent":
-                        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/151.0.0.0 Safari/537.36",
-
-                    "Accept":
-                        "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-
-                    "Accept-Language":
-                        "en-US,en;q=0.9"
+                    return res.status(
+                        500
+                    ).json({
+                        success: false,
+                        message:
+                            "Unable to logout."
+                    });
                 }
-            },
-            response => {
 
-                const elapsed =
-                    Date.now() - start;
-
-
-                console.log(
-                    "HTTP status:",
-                    response.statusCode
+                res.clearCookie(
+                    "connect.sid"
                 );
 
-
-                console.log(
-                    "Response time:",
-                    elapsed,
-                    "ms"
-                );
-
-
-                /*
-                 * We don't need to read the entire
-                 * receipt for this test.
-                 */
-
-                response.resume();
-
-
-                response.on(
-                    "end",
-                    () => {
-
-                        console.log(
-                            "Telebirr connection test completed."
-                        );
-
-
-                        console.log(
-                            "=============================================="
-                        );
-
-
-                        return res.json({
-
-                            success: true,
-
-                            reachable: true,
-
-                            statusCode:
-                                response.statusCode,
-
-                            responseTimeMs:
-                                elapsed
-                        });
-                    }
-                );
-            }
-        );
-
-
-    /*
-     * Stop the test after 10 seconds.
-     */
-
-    request.setTimeout(
-        10000,
-        () => {
-
-            request.destroy(
-                new Error(
-                    "Telebirr connection timed out after 10 seconds."
-                )
-            );
-        }
-    );
-
-
-    /*
-     * Handle connection errors.
-     */
-
-    request.on(
-        "error",
-        error => {
-
-            const elapsed =
-                Date.now() - start;
-
-
-            console.error(
-                "Telebirr connection error:",
-                error.message
-            );
-
-
-            console.log(
-                "Response time:",
-                elapsed,
-                "ms"
-            );
-
-
-            console.log(
-                "=============================================="
-            );
-
-
-            if (!res.headersSent) {
-
-                return res.status(502).json({
-
-                    success: false,
-
-                    reachable: false,
-
-                    error:
-                        error.message,
-
-                    responseTimeMs:
-                        elapsed
+                return res.json({
+                    success: true,
+                    message:
+                        "Logged out successfully."
                 });
             }
+        );
+    }
+);
+
+/*
+==========================================
+TELEBIRR CONNECTION TEST
+==========================================
+*/
+
+app.get(
+    "/api/telebirr-test",
+    requireLogin,
+    async function (req, res) {
+        const receiptNo =
+            "DI52GY7RUI";
+
+        try {
+            console.log(
+                "Testing direct Telebirr connection..."
+            );
+
+            console.log(
+                "Receipt:",
+                receiptNo
+            );
+
+            const html =
+                await loadReceipt({
+                    receiptNo:
+                        receiptNo
+                });
+
+            return res.json({
+                success: true,
+                message:
+                    "Telebirr receipt retrieved successfully.",
+                receiptNo:
+                    receiptNo,
+                htmlLength:
+                    html.length
+            });
+        } catch (error) {
+            console.error(
+                "Telebirr direct test error:",
+                error
+            );
+
+            return res.status(
+                502
+            ).json({
+                success: false,
+                message:
+                    "Unable to connect directly to Telebirr.",
+                error:
+                    error.message
+            });
         }
-    );
-});
+    }
+);
 
-
-/* =========================================================
-   VERIFY PAYMENT
-========================================================= */
+/*
+==========================================
+VERIFY TRANSACTION
+==========================================
+*/
 
 app.post(
     "/api/verify",
     requireLogin,
-    async (req, res) => {
+    async function (req, res) {
 
         /*
-         * Get transaction ID from frontend.
-         */
+        ----------------------------------
+        GET TRANSACTION ID
+        ----------------------------------
+        */
 
         const transactionId =
             String(
                 req.body.transactionId ||
+                req.body.transaction_id ||
+                req.body.receiptNo ||
+                req.body.receipt_no ||
                 ""
             ).trim();
 
-
         if (!transactionId) {
-
-            return res.status(400).json({
-
+            return res.status(
+                400
+            ).json({
                 success: false,
-
                 verified: false,
-
+                duplicate: false,
                 message:
-                    "Transaction ID is required.",
-
-                checks: {
-
-                    transactionFound: false,
-
-                    transactionCompleted: false,
-
-                    settlementMatched: false
-                },
-
-                receipt: null
+                    "Transaction ID is required."
             });
         }
 
+        /*
+        ----------------------------------
+        GET TELEBIRR RECEIPT
+        ----------------------------------
+        */
 
-        console.log("");
-
-        console.log(
-            "========== PAYMENT VERIFICATION =========="
-        );
-
-        console.log(
-            "Admin:",
-            req.session.username
-        );
-
-        console.log(
-            "Transaction ID:",
-            transactionId
-        );
-
+        let html;
 
         try {
-
-            /* =================================================
-               STEP 1 — RETRIEVE TELEBIRR RECEIPT
-            ================================================= */
-
             console.log(
-                "Retrieving Telebirr receipt..."
+                "Verifying transaction directly with Telebirr:",
+                transactionId
             );
 
-
-            const html =
+            html =
                 await loadReceipt({
-                    receiptNo: transactionId
+                    receiptNo:
+                        transactionId
                 });
-
-
-            if (!html) {
-
-                throw new Error(
-                    "Telebirr returned an empty receipt."
-                );
-            }
-
-
-            console.log(
-                "Telebirr receipt retrieved successfully."
+        } catch (error) {
+            console.error(
+                "Telebirr connection error:",
+                error
             );
 
+            return res.status(
+                502
+            ).json({
+                success: false,
+                verified: false,
+                duplicate: false,
+                message:
+                    "Unable to retrieve the Telebirr receipt.",
+                error:
+                    error.message
+            });
+        }
 
-            /* =================================================
-               STEP 2 — PARSE RECEIPT
-            ================================================= */
+        /*
+        ----------------------------------
+        CHECK HTML
+        ----------------------------------
+        */
 
-            const parsed =
+        if (
+            !html ||
+            html.length < 100
+        ) {
+            return res.status(
+                502
+            ).json({
+                success: false,
+                verified: false,
+                duplicate: false,
+                message:
+                    "Telebirr returned an empty or invalid receipt."
+            });
+        }
+
+        /*
+        ----------------------------------
+        PARSE RECEIPT
+        ----------------------------------
+        */
+
+        let parsed;
+
+        try {
+            parsed =
                 parseFromHTML(html);
-
-
-            console.log(
-                "Parsed receipt:",
-                parsed
+        } catch (parseError) {
+            console.error(
+                "Receipt parsing error:",
+                parseError
             );
 
+            return res.status(
+                500
+            ).json({
+                success: false,
+                verified: false,
+                duplicate: false,
+                message:
+                    "Unable to parse the Telebirr receipt."
+            });
+        }
 
-            /*
-             * A valid parsed receipt should
-             * contain receipt information.
-             */
+        if (
+            !parsed ||
+            typeof parsed !== "object"
+        ) {
+            return res.status(
+                404
+            ).json({
+                success: false,
+                verified: false,
+                duplicate: false,
+                message:
+                    "No valid receipt information was found."
+            });
+        }
 
-            const transactionFound =
-                Boolean(
-                    parsed &&
-                    Object.keys(parsed).length > 0
-                );
+        /*
+        ----------------------------------
+        RECEIPT NUMBER
+        ----------------------------------
+        */
 
+        const receiptNo =
+            parsed.receiptNo ||
+            parsed.invoice_no ||
+            parsed.invoiceNo ||
+            transactionId;
 
-            /* =================================================
-               STEP 3 — CHECK TRANSACTION STATUS
-            ================================================= */
+        /*
+        ----------------------------------
+        TRANSACTION STATUS
+        ----------------------------------
+        */
 
-            const status =
-                String(
-                    parsed.transaction_status ||
-                    ""
-                ).trim();
+        const status =
+            String(
+                parsed.transaction_status ||
+                parsed.transactionStatus ||
+                parsed.status ||
+                ""
+            ).trim();
 
+        const normalizedStatus =
+            status.toLowerCase();
 
-            const normalizedStatus =
-                status.toLowerCase();
+        /*
+        ----------------------------------
+        TRANSACTION FOUND
+        ----------------------------------
+        */
 
-
-            const transactionCompleted =
-                normalizedStatus === "completed" ||
-                normalizedStatus === "successful" ||
-                normalizedStatus === "success" ||
-                normalizedStatus.includes("completed") ||
-                normalizedStatus.includes("successful") ||
-                normalizedStatus.includes("success") ||
-                status.includes("ተሳክቷል");
-
-
-            /* =================================================
-               STEP 4 — GET CREDITED ACCOUNT
-            ================================================= */
-
-            const creditedAccount =
-                parsed.credited_party_acc_no ||
-                parsed.credited_party_account ||
-                parsed.creditedAccount ||
-                "";
-
-
-            console.log(
-                "Transaction status:",
-                status || "N/A"
+        const transactionFound =
+            Boolean(
+                receiptNo &&
+                html &&
+                html.length > 100
             );
 
+        /*
+        ----------------------------------
+        TRANSACTION COMPLETED
+        ----------------------------------
+        */
 
-            console.log(
-                "Credited account:",
-                creditedAccount || "N/A"
+        const transactionCompleted =
+            normalizedStatus ===
+                "completed" ||
+            normalizedStatus.startsWith(
+                "completed "
+            ) ||
+            normalizedStatus ===
+                "successful" ||
+            normalizedStatus.startsWith(
+                "successful "
+            ) ||
+            normalizedStatus ===
+                "success" ||
+            normalizedStatus.startsWith(
+                "success "
+            ) ||
+            normalizedStatus ===
+                "paid" ||
+            normalizedStatus.startsWith(
+                "paid "
             );
 
+        /*
+        ----------------------------------
+        CREDITED ACCOUNT
+        ----------------------------------
+        */
 
-            /* =================================================
-               STEP 5 — MATCH SETTLEMENT ACCOUNT
-            ================================================= */
+        const creditedAccount =
+            parsed.credited_party_acc_no ||
+            parsed.creditedPartyAccount ||
+            parsed.creditedAccount ||
+            parsed.credited_account ||
+            parsed.receiverAccount ||
+            parsed.receiver_account ||
+            "";
 
-            const matchedSettlementWallet =
-                findSettlementWallet(
-                    creditedAccount
-                );
+        /*
+        ----------------------------------
+        SETTLEMENT CHECK
+        ----------------------------------
+        */
 
-
-            const settlementMatched =
-                Boolean(
-                    matchedSettlementWallet
-                );
-
-
-            console.log(
-                "Settlement account matched:",
-                settlementMatched
+        const settlementWallet =
+            findSettlementWallet(
+                creditedAccount
             );
 
+        const settlementMatched =
+            settlementWallet !== null;
 
-            if (matchedSettlementWallet) {
+        /*
+        ----------------------------------
+        BASIC VERIFICATION
+        ----------------------------------
+        */
 
-                console.log(
-                    "Matched settlement wallet:",
-                    matchedSettlementWallet
-                );
-            }
+        const verified =
+            transactionFound &&
+            transactionCompleted &&
+            settlementMatched;
 
+        /*
+        ==================================
+        DUPLICATE CHECK
+        ==================================
+        */
 
-            /* =================================================
-               STEP 6 — FINAL VERIFICATION
-            ================================================= */
+        let existingTransaction = null;
 
-            const verified =
-                transactionFound &&
-                transactionCompleted &&
-                settlementMatched;
-
-
-            console.log(
-                "FINAL VERIFICATION:",
-                verified
+        try {
+            existingTransaction =
+                db.prepare(`
+                    SELECT
+                        id,
+                        receipt_no,
+                        settled_amount,
+                        total_amount,
+                        verified_by,
+                        verified_at,
+                        status
+                    FROM transactions
+                    WHERE receipt_no = ?
+                    LIMIT 1
+                `).get(receiptNo);
+        } catch (dbError) {
+            console.error(
+                "Database duplicate check error:",
+                dbError
             );
 
+            return res.status(
+                500
+            ).json({
+                success: false,
+                verified: false,
+                duplicate: false,
+                message:
+                    "Unable to check transaction history."
+            });
+        }
 
+        /*
+        ==================================
+        IF DUPLICATE
+        ==================================
+        */
+
+        if (
+            existingTransaction
+        ) {
             console.log(
-                "=========================================="
+                "DUPLICATE TRANSACTION:",
+                receiptNo
             );
-
-
-            /* =================================================
-               STEP 7 — FORMAT RECEIPT FOR FRONTEND
-            ================================================= */
-
-            const receipt = {
-
-                transaction_id:
-                    transactionId,
-
-                invoice_no:
-                    parsed.receiptNo ||
-                    transactionId,
-
-                transaction_status:
-                    parsed.transaction_status ||
-                    "",
-
-                settled_amount:
-                    parsed.settled_amount ??
-                    null,
-
-                total_paid_amount:
-                    parsed.total_amount ??
-                    null,
-
-                payment_date:
-                    parsed.date ||
-                    "",
-
-                payment_mode:
-                    parsed.payment_mode ||
-                    "",
-
-                payment_channel:
-                    parsed.payment_channel ||
-                    "",
-
-                payer_name:
-                    parsed.payer_name ||
-                    "",
-
-                credited_party_name:
-                    parsed.credited_party_name ||
-                    "",
-
-                credited_party_account:
-                    creditedAccount ||
-                    "",
-
-                payment_reason:
-                    parsed.payment_reason ||
-                    ""
-            };
-
-
-            /* =================================================
-               STEP 8 — SEND RESULT TO FRONTEND
-            ================================================= */
 
             return res.json({
-
                 success: true,
 
-                verified: verified,
+                verified: false,
+
+                duplicate: true,
 
                 message:
-                    verified
-                        ? "Payment verified successfully."
-                        : !transactionFound
-                            ? "Transaction could not be found."
-                            : !transactionCompleted
-                                ? "Transaction has not been completed."
-                                : !settlementMatched
-                                    ? "Credited account does not match a configured settlement account."
-                                    : "Payment could not be verified.",
+                    "This transaction has already been verified.",
+
+                duplicateInfo: {
+                    receipt_no:
+                        existingTransaction.receipt_no,
+
+                    verified_by:
+                        existingTransaction.verified_by,
+
+                    verified_at:
+                        existingTransaction.verified_at,
+
+                    amount:
+                        existingTransaction.settled_amount,
+
+                    total_amount:
+                        existingTransaction.total_amount,
+
+                    status:
+                        existingTransaction.status
+                },
 
                 checks: {
-
                     transactionFound:
                         transactionFound,
 
@@ -915,105 +772,501 @@ app.post(
                         settlementMatched
                 },
 
-                receipt: receipt
-            });
+                receipt: {
+                    transaction_id:
+                        transactionId,
 
+                    invoice_no:
+                        receiptNo,
 
-        } catch (error) {
+                    transaction_status:
+                        status,
 
-            console.error("");
+                    settled_amount:
+                        parsed.settled_amount ??
+                        "",
 
-            console.error(
-                "========== VERIFICATION ERROR =========="
-            );
+                    total_paid_amount:
+                        parsed.total_amount ??
+                        "",
 
-            console.error(
-                error
-            );
+                    service_fee:
+                        parsed.service_fee ??
+                        "",
 
-            console.error(
-                "========================================"
-            );
+                    service_fee_vat:
+                        parsed.service_fee_vat ??
+                        "",
 
+                    total_fee:
+                        parsed.total_fee ??
+                        "",
 
-            return res.status(502).json({
+                    payment_date:
+                        parsed.date ||
+                        "",
 
-                success: false,
+                    payment_mode:
+                        parsed.payment_mode ||
+                        "",
 
-                verified: false,
+                    payment_channel:
+                        parsed.payment_channel ||
+                        "",
 
-                message:
-                    "Unable to retrieve or verify the Telebirr receipt.",
+                    payer_name:
+                        parsed.payer_name ||
+                        "",
 
-                checks: {
+                    payer_account:
+                        parsed.payer_telebirr_no ||
+                        "",
 
-                    transactionFound: false,
+                    credited_party_name:
+                        parsed.credited_party_name ||
+                        "",
 
-                    transactionCompleted: false,
+                    credited_party_account:
+                        creditedAccount,
 
-                    settlementMatched: false
-                },
+                    payment_reason:
+                        parsed.payment_reason ||
+                        "",
 
-                receipt: null
+                    settlement_wallet:
+                        settlementWallet ||
+                        ""
+                }
             });
         }
+
+        /*
+        ==================================
+        VERIFICATION MESSAGE
+        ==================================
+        */
+
+        let message;
+
+        if (verified) {
+            message =
+                "Payment successfully verified.";
+        } else if (
+            !transactionFound
+        ) {
+            message =
+                "Transaction receipt was not found.";
+        } else if (
+            !transactionCompleted
+        ) {
+            message =
+                "Transaction was found, but its status is not completed.";
+        } else if (
+            !settlementMatched
+        ) {
+            message =
+                "Transaction was completed, but the credited account does not match an approved settlement wallet.";
+        } else {
+            message =
+                "Payment could not be verified.";
+        }
+
+        /*
+        ==================================
+        SAVE VERIFIED TRANSACTION
+        ==================================
+        */
+
+        if (verified) {
+            const verifiedBy =
+                req.session.username ||
+                "unknown";
+
+            const verifiedAt =
+                new Date().toISOString();
+
+            try {
+                const insert =
+                    db.prepare(`
+                        INSERT INTO transactions (
+                            receipt_no,
+
+                            payer_name,
+                            payer_telebirr_no,
+
+                            credited_party_name,
+                            credited_party_acc_no,
+
+                            transaction_status,
+
+                            settled_amount,
+                            service_fee,
+                            service_fee_vat,
+                            total_fee,
+                            total_amount,
+
+                            payment_mode,
+                            payment_reason,
+                            payment_channel,
+
+                            verified_by,
+                            verified_at,
+
+                            status
+                        )
+                        VALUES (
+                            @receipt_no,
+
+                            @payer_name,
+                            @payer_telebirr_no,
+
+                            @credited_party_name,
+                            @credited_party_acc_no,
+
+                            @transaction_status,
+
+                            @settled_amount,
+                            @service_fee,
+                            @service_fee_vat,
+                            @total_fee,
+                            @total_amount,
+
+                            @payment_mode,
+                            @payment_reason,
+                            @payment_channel,
+
+                            @verified_by,
+                            @verified_at,
+
+                            @status
+                        )
+                    `);
+
+                insert.run({
+                    receipt_no:
+                        receiptNo,
+
+                    payer_name:
+                        parsed.payer_name ||
+                        "",
+
+                    payer_telebirr_no:
+                        parsed.payer_telebirr_no ||
+                        "",
+
+                    credited_party_name:
+                        parsed.credited_party_name ||
+                        "",
+
+                    credited_party_acc_no:
+                        creditedAccount,
+
+                    transaction_status:
+                        status,
+
+                    settled_amount:
+                        parsed.settled_amount ??
+                        null,
+
+                    service_fee:
+                        parsed.service_fee ??
+                        null,
+
+                    service_fee_vat:
+                        parsed.service_fee_vat ??
+                        null,
+
+                    total_fee:
+                        parsed.total_fee ??
+                        null,
+
+                    total_amount:
+                        parsed.total_amount ??
+                        null,
+
+                    payment_mode:
+                        parsed.payment_mode ||
+                        "",
+
+                    payment_reason:
+                        parsed.payment_reason ||
+                        "",
+
+                    payment_channel:
+                        parsed.payment_channel ||
+                        "",
+
+                    verified_by:
+                        verifiedBy,
+
+                    verified_at:
+                        verifiedAt,
+
+                    status:
+                        "VERIFIED"
+                });
+
+                console.log(
+                    "Transaction saved:",
+                    receiptNo
+                );
+
+            } catch (dbError) {
+
+                /*
+                ----------------------------------
+                RACE CONDITION PROTECTION
+                ----------------------------------
+                */
+
+                if (
+                    dbError &&
+                    dbError.code ===
+                        "SQLITE_CONSTRAINT_UNIQUE"
+                ) {
+                    const duplicate =
+                        db.prepare(`
+                            SELECT
+                                receipt_no,
+                                settled_amount,
+                                total_amount,
+                                verified_by,
+                                verified_at,
+                                status
+                            FROM transactions
+                            WHERE receipt_no = ?
+                            LIMIT 1
+                        `).get(receiptNo);
+
+                    return res.json({
+                        success: true,
+                        verified: false,
+                        duplicate: true,
+
+                        message:
+                            "This transaction has already been verified.",
+
+                        duplicateInfo: {
+                            receipt_no:
+                                duplicate.receipt_no,
+
+                            verified_by:
+                                duplicate.verified_by,
+
+                            verified_at:
+                                duplicate.verified_at,
+
+                            amount:
+                                duplicate.settled_amount,
+
+                            total_amount:
+                                duplicate.total_amount,
+
+                            status:
+                                duplicate.status
+                        },
+
+                        checks: {
+                            transactionFound:
+                                transactionFound,
+
+                            transactionCompleted:
+                                transactionCompleted,
+
+                            settlementMatched:
+                                settlementMatched
+                        }
+                    });
+                }
+
+                console.error(
+                    "Database save error:",
+                    dbError
+                );
+
+                return res.status(
+                    500
+                ).json({
+                    success: false,
+                    verified: false,
+                    duplicate: false,
+                    message:
+                        "Payment was verified, but the transaction could not be saved to the database."
+                });
+            }
+        }
+
+        /*
+        ==================================
+        RETURN NORMAL RESULT
+        ==================================
+        */
+
+        return res.json({
+            success: true,
+
+            verified:
+                verified,
+
+            duplicate:
+                false,
+
+            message:
+                message,
+
+            checks: {
+                transactionFound:
+                    transactionFound,
+
+                transactionCompleted:
+                    transactionCompleted,
+
+                settlementMatched:
+                    settlementMatched
+            },
+
+            receipt: {
+                transaction_id:
+                    transactionId,
+
+                invoice_no:
+                    receiptNo,
+
+                transaction_status:
+                    status,
+
+                settled_amount:
+                    parsed.settled_amount ??
+                    parsed.settledAmount ??
+                    "",
+
+                total_paid_amount:
+                    parsed.total_amount ??
+                    parsed.total_paid_amount ??
+                    parsed.totalPaidAmount ??
+                    "",
+
+                service_fee:
+                    parsed.service_fee ??
+                    parsed.serviceFee ??
+                    "",
+
+                service_fee_vat:
+                    parsed.service_fee_vat ??
+                    parsed.serviceFeeVat ??
+                    "",
+
+                total_fee:
+                    parsed.total_fee ??
+                    "",
+
+                payment_date:
+                    parsed.date ||
+                    parsed.payment_date ||
+                    parsed.paymentDate ||
+                    "",
+
+                payment_mode:
+                    parsed.payment_mode ||
+                    parsed.paymentMode ||
+                    "",
+
+                payment_channel:
+                    parsed.payment_channel ||
+                    parsed.paymentChannel ||
+                    "",
+
+                payer_name:
+                    parsed.payer_name ||
+                    parsed.payer ||
+                    parsed.payerName ||
+                    "",
+
+                payer_account:
+                    parsed.payer_telebirr_no ||
+                    parsed.payer_account ||
+                    parsed.payerAccount ||
+                    "",
+
+                credited_party_name:
+                    parsed.credited_party_name ||
+                    parsed.creditedParty ||
+                    parsed.creditedPartyName ||
+                    "",
+
+                credited_party_account:
+                    creditedAccount,
+
+                payment_reason:
+                    parsed.payment_reason ||
+                    parsed.paymentReason ||
+                    "",
+
+                settlement_wallet:
+                    settlementWallet ||
+                    ""
+            }
+        });
     }
 );
 
-
-/* =========================================================
-   UNKNOWN API ROUTES
-========================================================= */
+/*
+==========================================
+UNKNOWN API ROUTE
+==========================================
+*/
 
 app.use(
     "/api",
-    (req, res) => {
-
-        return res.status(404).json({
-
+    function (req, res) {
+        res.status(404).json({
             success: false,
-
             message:
                 "API endpoint not found."
         });
     }
 );
 
+/*
+==========================================
+START SERVER
+==========================================
+*/
 
-/* =========================================================
-   START SERVER
-========================================================= */
+app.listen(
+    PORT,
+    function () {
+        console.log(
+            "=========================================="
+        );
 
-app.listen(PORT, () => {
+        console.log(
+            "       NEXEL PAYS PAYMENT VERIFIER"
+        );
 
-    console.log("");
+        console.log(
+            "=========================================="
+        );
 
-    console.log(
-        "=========================================="
-    );
+        console.log(
+            "Server running on port " +
+                PORT
+        );
 
-    console.log(
-        "      NEXEL PAYS PAYMENT VERIFIER"
-    );
+        console.log(
+            "Telebirr connection: DIRECT"
+        );
 
-    console.log(
-        "=========================================="
-    );
+        console.log(
+            "SQLite database: ENABLED"
+        );
 
-    console.log(
-        `Admin accounts loaded: ${ADMIN_ACCOUNTS.length}`
-    );
+        console.log(
+            "Duplicate detection: ENABLED"
+        );
 
-    console.log(
-        `Settlement wallets: ${SETTLEMENT_WALLETS.length}`
-    );
-
-    console.log(
-        `Server running on http://localhost:${PORT}`
-    );
-
-    console.log(
-        "=========================================="
-    );
-
-});
+        console.log(
+            "=========================================="
+        );
+    }
+);

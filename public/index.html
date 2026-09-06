@@ -30,8 +30,6 @@
 
         <div class="login-card">
 
-            <!-- BRAND -->
-
             <div class="brand login-brand">
 
                 <div class="brand-mark">
@@ -51,8 +49,6 @@
             </div>
 
 
-            <!-- LOGIN HEADING -->
-
             <div class="login-heading">
 
                 <span class="eyebrow">
@@ -67,14 +63,15 @@
                     Secure access to the Nexel Pays transaction verification portal.
                 </p>
 
+                <p>
+                    Naol said hi. 👋<br>
+                    He also said <strong>please work hard</strong>… unfortunately, he’s watching. 👁️
+                </p>
+
             </div>
 
 
-            <!-- LOGIN FORM -->
-
             <form id="loginForm">
-
-                <!-- USERNAME -->
 
                 <div class="field">
 
@@ -102,8 +99,6 @@
                 </div>
 
 
-                <!-- PASSWORD -->
-
                 <div class="field">
 
                     <label for="password">
@@ -130,8 +125,6 @@
                 </div>
 
 
-                <!-- LOGIN BUTTON -->
-
                 <button
                     id="loginButton"
                     class="primary-button login-button"
@@ -149,8 +142,6 @@
                 </button>
 
 
-                <!-- LOGIN ERROR -->
-
                 <div
                     id="loginError"
                     class="error-message"
@@ -159,8 +150,6 @@
 
             </form>
 
-
-            <!-- LOGIN FOOTER -->
 
             <div class="login-footer">
 
@@ -185,13 +174,9 @@
         class="dashboard-page hidden"
     >
 
-        <!-- =================================================
-             SIDEBAR
-        ================================================== -->
+        <!-- SIDEBAR -->
 
         <aside class="sidebar">
-
-            <!-- SIDEBAR BRAND -->
 
             <div class="sidebar-brand">
 
@@ -214,14 +199,10 @@
             </div>
 
 
-            <!-- SIDEBAR LABEL -->
-
             <div class="sidebar-label">
                 PAYMENT OPERATIONS
             </div>
 
-
-            <!-- NAVIGATION -->
 
             <nav>
 
@@ -241,11 +222,7 @@
             </nav>
 
 
-            <!-- SIDEBAR BOTTOM -->
-
             <div class="sidebar-bottom">
-
-                <!-- SECURE SESSION -->
 
                 <div class="secure-box">
 
@@ -268,8 +245,6 @@
                 </div>
 
 
-                <!-- LOGOUT -->
-
                 <button
                     id="logoutButton"
                     class="logout-button"
@@ -290,9 +265,7 @@
 
 
 
-        <!-- =================================================
-             MAIN CONTENT
-        ================================================== -->
+        <!-- MAIN CONTENT -->
 
         <main class="main-content">
 
@@ -329,9 +302,7 @@
 
             <div class="content">
 
-                <!-- =================================================
-                     HERO
-                ================================================== -->
+                <!-- HERO -->
 
                 <section class="hero-card">
 
@@ -370,13 +341,9 @@
 
 
 
-                <!-- =================================================
-                     VERIFICATION CARD
-                ================================================== -->
+                <!-- VERIFICATION CARD -->
 
                 <section class="verify-card">
-
-                    <!-- CARD HEADER -->
 
                     <div class="card-header">
 
@@ -408,20 +375,14 @@
                     </div>
 
 
-                    <!-- VERIFICATION FORM -->
-
                     <form id="verifyForm">
 
                         <div class="transaction-input">
-
-                            <!-- TRANSACTION ICON -->
 
                             <div class="transaction-icon">
                                 #
                             </div>
 
-
-                            <!-- TRANSACTION FIELD -->
 
                             <div class="transaction-field">
 
@@ -440,8 +401,6 @@
 
                             </div>
 
-
-                            <!-- VERIFY BUTTON -->
 
                             <button
                                 id="verifyButton"
@@ -464,8 +423,6 @@
                     </form>
 
 
-                    <!-- FORM NOTE -->
-
                     <div class="form-note">
 
                         <span>
@@ -480,31 +437,23 @@
 
 
 
-                <!-- =================================================
-                     RESULT SECTION
-                ================================================== -->
+                <!-- RESULT SECTION -->
 
                 <section
                     id="resultSection"
                     class="result-section hidden"
                 >
 
-                    <!-- =================================================
-                         RESULT CARD
-                    ================================================== -->
+                    <!-- RESULT CARD -->
 
                     <div
                         id="resultCard"
                         class="result-card"
                     >
 
-                        <!-- RESULT HEADER -->
-
                         <div class="result-header">
 
                             <div class="result-status">
-
-                                <!-- RESULT ICON -->
 
                                 <div
                                     id="resultIcon"
@@ -513,8 +462,6 @@
                                     ✓
                                 </div>
 
-
-                                <!-- RESULT TEXT -->
 
                                 <div>
 
@@ -540,8 +487,6 @@
                             </div>
 
 
-                            <!-- RESULT BADGE -->
-
                             <div
                                 id="resultBadge"
                                 class="result-badge"
@@ -553,9 +498,7 @@
 
 
 
-                        <!-- =================================================
-                             VERIFICATION CHECKS
-                        ================================================== -->
+                        <!-- VERIFICATION CHECKS -->
 
                         <div class="checks-grid">
 
@@ -611,7 +554,7 @@
                             </div>
 
 
-                            <!-- SETTLEMENT ACCOUNT -->
+                            <!-- APPROVED SETTLEMENT WALLET -->
 
                             <div
                                 id="checkSettlement"
@@ -625,7 +568,33 @@
                                 <div class="check-content">
 
                                     <span>
-                                        Settlement Account
+                                        Approved Settlement Wallet
+                                    </span>
+
+                                    <strong>
+                                        Matched
+                                    </strong>
+
+                                </div>
+
+                            </div>
+
+
+                            <!-- APPROVED WALLET CONFIRMATION -->
+
+                            <div
+                                id="checkApprovedWallet"
+                                class="check-item"
+                            >
+
+                                <div class="check-icon">
+                                    ✓
+                                </div>
+
+                                <div class="check-content">
+
+                                    <span>
+                                        Settlement Wallet
                                     </span>
 
                                     <strong>
@@ -642,16 +611,12 @@
 
 
 
-                    <!-- =================================================
-                         RECEIPT CARD
-                    ================================================== -->
+                    <!-- RECEIPT CARD -->
 
                     <div
                         id="receiptCard"
                         class="receipt-card"
                     >
-
-                        <!-- RECEIPT HEADER -->
 
                         <div class="receipt-header">
 
@@ -675,8 +640,6 @@
                         </div>
 
 
-                        <!-- RECEIPT DETAILS -->
-
                         <div
                             id="receiptDetails"
                             class="receipt-details"
@@ -688,9 +651,7 @@
 
 
 
-                <!-- =================================================
-                     FOOTER
-                ================================================== -->
+                <!-- FOOTER -->
 
                 <footer class="dashboard-footer">
 
@@ -721,12 +682,10 @@
 
 
 
-    <!-- =====================================================
-         JAVASCRIPT
-         Version number forces Chrome to load the newest file.
-    ====================================================== -->
+    <!-- JAVASCRIPT -->
 
-    <script src="app.js?v=4"></script>
+    <script src="app.js?v=5"></script>
 
 </body>
 </html>
+

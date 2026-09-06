@@ -1,65 +1,38 @@
-document.addEventListener("DOMContentLoaded", () => {
-
-    /* =========================================================
-       ELEMENTS
-    ========================================================= */
+document.addEventListener("DOMContentLoaded", function () {
 
     const loginPage = document.getElementById("loginPage");
     const dashboardPage = document.getElementById("dashboardPage");
 
     const loginForm = document.getElementById("loginForm");
     const loginError = document.getElementById("loginError");
+    const loginButton = document.getElementById("loginButton");
 
     const verifyForm = document.getElementById("verifyForm");
-    const transactionIdInput =
-        document.getElementById("transactionId");
+    const verifyButton = document.getElementById("verifyButton");
+    const verifyButtonText = document.getElementById("verifyButtonText");
 
-    const verifyButton =
-        document.getElementById("verifyButton");
+    const logoutButton = document.getElementById("logoutButton");
 
-    const verifyButtonText =
-        document.getElementById("verifyButtonText");
+    const resultSection = document.getElementById("resultSection");
+    const resultCard = document.getElementById("resultCard");
 
-    const logoutButton =
-        document.getElementById("logoutButton");
+    const resultIcon = document.getElementById("resultIcon");
+    const resultLabel = document.getElementById("resultLabel");
+    const resultTitle = document.getElementById("resultTitle");
+    const resultDescription = document.getElementById("resultDescription");
+    const resultBadge = document.getElementById("resultBadge");
 
-    const resultSection =
-        document.getElementById("resultSection");
+    const checkTransaction = document.getElementById("checkTransaction");
+    const checkStatus = document.getElementById("checkStatus");
+    const checkSettlement = document.getElementById("checkSettlement");
+    const checkApprovedWallet = document.getElementById("checkApprovedWallet");
 
-    const resultCard =
-        document.getElementById("resultCard");
-
-    const resultIcon =
-        document.getElementById("resultIcon");
-
-    const resultLabel =
-        document.getElementById("resultLabel");
-
-    const resultTitle =
-        document.getElementById("resultTitle");
-
-    const resultDescription =
-        document.getElementById("resultDescription");
-
-    const resultBadge =
-        document.getElementById("resultBadge");
-
-    const receiptDetails =
-        document.getElementById("receiptDetails");
-
-    const checkTransaction =
-        document.getElementById("checkTransaction");
-
-    const checkStatus =
-        document.getElementById("checkStatus");
-
-    const checkSettlement =
-        document.getElementById("checkSettlement");
+    const receiptDetails = document.getElementById("receiptDetails");
 
 
-    /* =========================================================
-       PAGE CONTROL
-    ========================================================= */
+    // =====================================================
+    // PAGE CONTROL
+    // =====================================================
 
     function showLogin() {
 
@@ -70,6 +43,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (dashboardPage) {
             dashboardPage.classList.add("hidden");
         }
+
     }
 
 
@@ -82,79 +56,19 @@ document.addEventListener("DOMContentLoaded", () => {
         if (dashboardPage) {
             dashboardPage.classList.remove("hidden");
         }
+
     }
 
 
-    /* =========================================================
-       CHECK SESSION
-    ========================================================= */
+    // =====================================================
+    // LOGIN
+    // =====================================================
 
-    async function checkSession() {
+    if (loginForm) {
 
-        try {
-
-            const response = await fetch(
-                "/api/session",
-                {
-                    method: "GET",
-                    credentials: "same-origin",
-                    cache: "no-store"
-                }
-            );
-
-            const data =
-                await response.json();
-
-            if (data.loggedIn === true) {
-
-                showDashboard();
-
-            } else {
-
-                showLogin();
-            }
-
-        } catch (error) {
-
-            console.error(
-                "Session error:",
-                error
-            );
-
-            showLogin();
-        }
-    }
-
-
-    /* =========================================================
-       LOGIN
-    ========================================================= */
-
-    if (!loginForm) {
-
-        console.error(
-            "ERROR: loginForm was not found in index.html"
-        );
-
-        return;
-    }
-
-
-    loginForm.addEventListener(
-        "submit",
-        async function (event) {
+        loginForm.addEventListener("submit", async function (event) {
 
             event.preventDefault();
-
-            console.log(
-                "Login button clicked."
-            );
-
-
-            if (loginError) {
-                loginError.textContent = "";
-            }
-
 
             const usernameInput =
                 document.getElementById("username");
@@ -163,27 +77,16 @@ document.addEventListener("DOMContentLoaded", () => {
                 document.getElementById("password");
 
 
-            if (!usernameInput || !passwordInput) {
-
-                if (loginError) {
-
-                    loginError.textContent =
-                        "Login fields could not be found.";
-                }
-
-                console.error(
-                    "Username or password field missing."
-                );
-
-                return;
-            }
-
-
             const username =
-                usernameInput.value.trim();
+                usernameInput
+                    ? usernameInput.value.trim()
+                    : "";
+
 
             const password =
-                passwordInput.value;
+                passwordInput
+                    ? passwordInput.value
+                    : "";
 
 
             if (!username || !password) {
@@ -191,108 +94,100 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (loginError) {
 
                     loginError.textContent =
-                        "Please enter your username and password.";
+                        "Username and password are required.";
+
                 }
 
                 return;
+
             }
 
 
-            const loginButton =
-                loginForm.querySelector(
-                    "button[type='submit']"
-                );
-
-
             if (loginButton) {
-
                 loginButton.disabled = true;
+            }
 
-                loginButton.innerHTML = `
-                    <span>Signing in...</span>
-                `;
+
+            if (loginError) {
+                loginError.textContent = "Signing in...";
             }
 
 
             try {
 
-                console.log(
-                    "Sending login request..."
+                const response = await fetch(
+                    "/api/login",
+                    {
+                        method: "POST",
+
+                        headers: {
+                            "Content-Type":
+                                "application/json"
+                        },
+
+                        credentials:
+                            "same-origin",
+
+                        body: JSON.stringify({
+                            username: username,
+                            password: password
+                        })
+                    }
                 );
 
 
-                const response =
-                    await fetch(
-                        "/api/login",
-                        {
-                            method: "POST",
+                let data = {};
 
-                            credentials: "same-origin",
+                try {
 
-                            cache: "no-store",
+                    data =
+                        await response.json();
 
-                            headers: {
-                                "Content-Type":
-                                    "application/json",
+                } catch (jsonError) {
 
-                                "Accept":
-                                    "application/json"
-                            },
+                    data = {};
 
-                            body: JSON.stringify({
-                                username: username,
-                                password: password
-                            })
-                        }
-                    );
-
-
-                console.log(
-                    "Login response:",
-                    response.status
-                );
-
-
-                const data =
-                    await response.json();
-
-
-                console.log(
-                    "Login data:",
-                    data
-                );
+                }
 
 
                 if (
-                    response.ok &&
-                    data.success === true
+                    !response.ok ||
+                    !data.success
                 ) {
-
-                    console.log(
-                        "LOGIN SUCCESSFUL"
-                    );
-
-
-                    loginForm.reset();
-
-                    showDashboard();
-
-
-                } else {
 
                     if (loginError) {
 
                         loginError.textContent =
                             data.message ||
-                            "Invalid login credentials.";
+                            "Invalid username or password.";
+
                     }
+
+
+                    if (loginButton) {
+                        loginButton.disabled = false;
+                    }
+
+
+                    return;
+
                 }
+
+
+                if (loginError) {
+                    loginError.textContent = "";
+                }
+
+
+                loginForm.reset();
+
+                showDashboard();
 
 
             } catch (error) {
 
                 console.error(
-                    "LOGIN ERROR:",
+                    "Login error:",
                     error
                 );
 
@@ -301,28 +196,78 @@ document.addEventListener("DOMContentLoaded", () => {
 
                     loginError.textContent =
                         "Unable to connect to the server.";
-                }
 
+                }
 
             } finally {
 
                 if (loginButton) {
-
                     loginButton.disabled = false;
-
-                    loginButton.innerHTML = `
-                        <span>Access Dashboard</span>
-                        <span class="button-arrow">→</span>
-                    `;
                 }
+
             }
+
+        });
+
+    }
+
+
+    // =====================================================
+    // SESSION CHECK
+    // =====================================================
+
+    async function checkSession() {
+
+        try {
+
+            const response =
+                await fetch(
+                    "/api/session",
+                    {
+                        method: "GET",
+                        credentials:
+                            "same-origin"
+                    }
+                );
+
+
+            const data =
+                await response.json();
+
+
+            if (
+                data &&
+                data.success &&
+                data.authenticated
+            ) {
+
+                showDashboard();
+
+            } else {
+
+                showLogin();
+
+            }
+
+
+        } catch (error) {
+
+            console.error(
+                "Session check error:",
+                error
+            );
+
+
+            showLogin();
+
         }
-    );
+
+    }
 
 
-    /* =========================================================
-       LOGOUT
-    ========================================================= */
+    // =====================================================
+    // LOGOUT
+    // =====================================================
 
     if (logoutButton) {
 
@@ -336,10 +281,11 @@ document.addEventListener("DOMContentLoaded", () => {
                         "/api/logout",
                         {
                             method: "POST",
-                            credentials: "same-origin",
-                            cache: "no-store"
+                            credentials:
+                                "same-origin"
                         }
                     );
+
 
                 } catch (error) {
 
@@ -347,30 +293,23 @@ document.addEventListener("DOMContentLoaded", () => {
                         "Logout error:",
                         error
                     );
+
                 }
 
-
-                if (verifyForm) {
-                    verifyForm.reset();
-                }
-
-                if (resultSection) {
-                    resultSection.classList.add("hidden");
-                }
-
-                if (receiptDetails) {
-                    receiptDetails.innerHTML = "";
-                }
 
                 showLogin();
+
+                clearResults();
+
             }
         );
+
     }
 
 
-    /* =========================================================
-       VERIFY PAYMENT
-    ========================================================= */
+    // =====================================================
+    // VERIFY PAYMENT
+    // =====================================================
 
     if (verifyForm) {
 
@@ -381,29 +320,42 @@ document.addEventListener("DOMContentLoaded", () => {
                 event.preventDefault();
 
 
+                const transactionInput =
+                    document.getElementById(
+                        "transactionId"
+                    );
+
+
                 const transactionId =
-                    transactionIdInput
-                        ? transactionIdInput.value.trim()
+                    transactionInput
+                        ? transactionInput.value.trim()
                         : "";
 
 
                 if (!transactionId) {
 
                     displayError(
-                        "Please enter a Telebirr Transaction ID."
+                        "Please enter a Telebirr transaction ID."
                     );
 
                     return;
+
                 }
+
+
+                clearResults();
 
 
                 if (verifyButton) {
                     verifyButton.disabled = true;
                 }
 
+
                 if (verifyButtonText) {
+
                     verifyButtonText.textContent =
                         "Verifying...";
+
                 }
 
 
@@ -415,18 +367,13 @@ document.addEventListener("DOMContentLoaded", () => {
                             {
                                 method: "POST",
 
-                                credentials:
-                                    "same-origin",
-
-                                cache: "no-store",
-
                                 headers: {
                                     "Content-Type":
-                                        "application/json",
-
-                                    "Accept":
                                         "application/json"
                                 },
+
+                                credentials:
+                                    "same-origin",
 
                                 body: JSON.stringify({
                                     transactionId:
@@ -436,21 +383,33 @@ document.addEventListener("DOMContentLoaded", () => {
                         );
 
 
-                    const data =
-                        await response.json();
+                    let data = {};
+
+
+                    try {
+
+                        data =
+                            await response.json();
+
+                    } catch (jsonError) {
+
+                        data = {};
+
+                    }
 
 
                     if (response.status === 401) {
 
-                        showLogin();
-
+                        // Session expired — redirect to login
                         if (loginError) {
-
                             loginError.textContent =
-                                "Your session has expired. Please log in again.";
+                                "Session expired. Please log in again.";
                         }
 
+                        showLogin();
+
                         return;
+
                     }
 
 
@@ -458,10 +417,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
                         displayError(
                             data.message ||
-                            "Unable to verify the transaction."
+                            "Verification failed."
                         );
 
                         return;
+
                     }
 
 
@@ -475,6 +435,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         error
                     );
 
+
                     displayError(
                         "Unable to connect to the verification server."
                     );
@@ -486,23 +447,29 @@ document.addEventListener("DOMContentLoaded", () => {
                         verifyButton.disabled = false;
                     }
 
+
                     if (verifyButtonText) {
+
                         verifyButtonText.textContent =
                             "Verify Payment";
+
                     }
+
                 }
+
             }
         );
+
     }
 
 
-    /* =========================================================
-       DISPLAY RESULT
-    ========================================================= */
+    // =====================================================
+    // DISPLAY RESULT
+    // =====================================================
 
     function displayResult(data) {
 
-        if (!resultSection || !resultCard) {
+        if (!resultSection) {
             return;
         }
 
@@ -513,144 +480,1027 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
         const verified =
-            data.verified === true;
+            Boolean(
+                data &&
+                data.verified
+            );
 
 
-        resultCard.classList.remove(
-            "verified",
-            "failed"
-        );
+        const duplicate =
+            Boolean(
+                data &&
+                data.duplicate
+            );
 
 
-        resultCard.classList.add(
-            verified
-                ? "verified"
-                : "failed"
-        );
+        const receipt =
+            data &&
+            data.receipt
+                ? data.receipt
+                : {};
 
 
-        if (resultIcon) {
+        // =================================================
+        // DUPLICATE TRANSACTION
+        // =================================================
 
-            resultIcon.textContent =
-                verified
-                    ? "✓"
-                    : "×";
-        }
+        if (duplicate) {
 
-
-        if (resultLabel) {
-
-            resultLabel.textContent =
-                verified
-                    ? "PAYMENT VERIFIED"
-                    : "PAYMENT NOT VERIFIED";
-        }
+            clearDuplicateBox();
 
 
-        if (resultTitle) {
+            if (resultIcon) {
 
-            resultTitle.textContent =
-                verified
-                    ? "Transaction successfully verified"
-                    : "Transaction could not be verified";
-        }
+                resultIcon.textContent =
+                    "!";
 
+                resultIcon.style.color =
+                    "#d97706";
 
-        if (resultDescription) {
+                resultIcon.style.background =
+                    "#fef3c7";
 
-            resultDescription.textContent =
-                verified
-                    ? "The transaction passed all verification checks."
-                    : (
-                        data.message ||
-                        "Unable to retrieve or verify the Telebirr receipt."
-                    );
-        }
+            }
 
 
-        if (resultBadge) {
+            if (resultLabel) {
 
-            resultBadge.textContent =
-                verified
-                    ? "VERIFIED"
-                    : "NOT VERIFIED";
-        }
+                resultLabel.textContent =
+                    "DUPLICATE TRANSACTION";
+
+                resultLabel.style.color =
+                    "#d97706";
+
+            }
 
 
-        let amount = "";
+            if (resultTitle) {
+
+                resultTitle.textContent =
+                    "This transaction has already been verified.";
+
+            }
 
 
-        if (
-            data.receipt &&
-            data.receipt.settled_amount !== null &&
-            data.receipt.settled_amount !== undefined
-        ) {
+            if (resultDescription) {
 
-            amount =
-                String(
-                    data.receipt.settled_amount
+                resultDescription.textContent =
+                    data.message ||
+                    "This transaction was previously verified and is being shown for review.";
+
+            }
+
+
+            if (resultBadge) {
+
+                resultBadge.textContent =
+                    "DUPLICATE";
+
+                resultBadge.style.color =
+                    "#b45309";
+
+                resultBadge.style.background =
+                    "#fef3c7";
+
+                resultBadge.style.borderColor =
+                    "#fcd34d";
+
+            }
+
+
+            const duplicateInfo =
+                data.duplicateInfo || {};
+
+
+            const duplicateBox =
+                document.createElement(
+                    "div"
                 );
+
+
+            duplicateBox.id =
+                "nexelDuplicateInfo";
+
+
+            duplicateBox.style.cssText = `
+                margin-top:20px;
+                padding:20px;
+                border-radius:16px;
+                background:#fffbeb;
+                border:1px solid #fcd34d;
+                box-shadow:0 4px 14px rgba(146,64,14,.08);
+            `;
+
+
+            const receiptNumber =
+                duplicateInfo.receipt_no ||
+                receipt.receiptNo ||
+                receipt.transaction_id ||
+                data.transactionId ||
+                "—";
+
+
+            const verifiedBy =
+                duplicateInfo.verified_by ||
+                "—";
+
+
+            let verifiedAt =
+                duplicateInfo.verified_at ||
+                "—";
+
+
+            if (
+                verifiedAt !== "—" &&
+                !isNaN(
+                    Date.parse(verifiedAt)
+                )
+            ) {
+
+                verifiedAt =
+                    new Date(
+                        verifiedAt
+                    ).toLocaleString();
+
+            }
+
+
+            const duplicateAmount =
+                parseNumber(
+                    duplicateInfo.amount
+                );
+
+
+            const receiptAmount =
+                parseNumber(
+                    receipt.total_paid_amount
+                );
+
+
+            const settledAmount =
+                parseNumber(
+                    receipt.settled_amount
+                );
+
+
+            const finalAmount =
+                duplicateAmount !== null
+                    ? duplicateAmount
+                    : (
+                        receiptAmount !== null
+                            ? receiptAmount
+                            : settledAmount
+                    );
+
+
+            const amountText =
+                finalAmount !== null
+                    ? `${formatMoney(finalAmount)} ETB`
+                    : "—";
+
+
+            duplicateBox.innerHTML = `
+
+                <div style="
+                    display:flex;
+                    align-items:center;
+                    gap:12px;
+                    margin-bottom:18px;
+                ">
+
+                    <div style="
+                        width:42px;
+                        height:42px;
+                        min-width:42px;
+                        border-radius:50%;
+                        display:flex;
+                        align-items:center;
+                        justify-content:center;
+                        background:#fef3c7;
+                        color:#d97706;
+                        font-size:24px;
+                        font-weight:900;
+                        border:1px solid #fcd34d;
+                    ">
+                        !
+                    </div>
+
+                    <div>
+
+                        <div style="
+                            font-size:15px;
+                            font-weight:900;
+                            color:#92400e;
+                            letter-spacing:.04em;
+                        ">
+                            DUPLICATE TRANSACTION
+                        </div>
+
+                        <div style="
+                            margin-top:3px;
+                            font-size:12px;
+                            color:#a16207;
+                        ">
+                            This receipt was already verified.
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <div style="
+                    display:flex;
+                    justify-content:space-between;
+                    align-items:flex-start;
+                    gap:15px;
+                    padding:11px 0;
+                    border-bottom:1px solid #fde68a;
+                ">
+
+                    <span style="
+                        color:#92400e;
+                        font-size:13px;
+                        font-weight:700;
+                    ">
+                        Receipt Number
+                    </span>
+
+                    <strong style="
+                        color:#451a03;
+                        font-size:13px;
+                        text-align:right;
+                        word-break:break-word;
+                        max-width:65%;
+                    ">
+                        ${escapeHTML(receiptNumber)}
+                    </strong>
+
+                </div>
+
+
+                <div style="
+                    display:flex;
+                    justify-content:space-between;
+                    align-items:flex-start;
+                    gap:15px;
+                    padding:11px 0;
+                    border-bottom:1px solid #fde68a;
+                ">
+
+                    <span style="
+                        color:#92400e;
+                        font-size:13px;
+                        font-weight:700;
+                    ">
+                        Previously Verified
+                    </span>
+
+                    <strong style="
+                        color:#451a03;
+                        font-size:13px;
+                        text-align:right;
+                        max-width:65%;
+                    ">
+                        ${escapeHTML(verifiedAt)}
+                    </strong>
+
+                </div>
+
+
+                <div style="
+                    display:flex;
+                    justify-content:space-between;
+                    align-items:flex-start;
+                    gap:15px;
+                    padding:11px 0;
+                    border-bottom:1px solid #fde68a;
+                ">
+
+                    <span style="
+                        color:#92400e;
+                        font-size:13px;
+                        font-weight:700;
+                    ">
+                        Verified By
+                    </span>
+
+                    <strong style="
+                        color:#451a03;
+                        font-size:13px;
+                        text-align:right;
+                    ">
+                        ${escapeHTML(verifiedBy)}
+                    </strong>
+
+                </div>
+
+
+                <div style="
+                    display:flex;
+                    justify-content:space-between;
+                    align-items:flex-start;
+                    gap:15px;
+                    padding:11px 0 0;
+                ">
+
+                    <span style="
+                        color:#92400e;
+                        font-size:13px;
+                        font-weight:700;
+                    ">
+                        Amount
+                    </span>
+
+                    <strong style="
+                        color:#b45309;
+                        font-size:15px;
+                        text-align:right;
+                    ">
+                        ${escapeHTML(amountText)}
+                    </strong>
+
+                </div>
+
+            `;
+
+
+            if (resultCard) {
+
+                const checksGrid =
+                    resultCard.querySelector(
+                        ".checks-grid"
+                    );
+
+
+                if (checksGrid) {
+
+                    checksGrid.before(
+                        duplicateBox
+                    );
+
+                } else {
+
+                    resultCard.appendChild(
+                        duplicateBox
+                    );
+
+                }
+
+            }
+
+
+            // ---------------------------------------------
+            // DUPLICATE CHECKS
+            // ---------------------------------------------
+
+            const checks =
+                data &&
+                data.checks
+                    ? data.checks
+                    : {};
+
+
+            updateCheck(
+                checkTransaction,
+                checks.transactionFound,
+                "Found",
+                "Not Found"
+            );
+
+
+            updateCheck(
+                checkStatus,
+                checks.transactionCompleted,
+                "Completed",
+                "Not Completed"
+            );
+
+
+            updateCheck(
+                checkSettlement,
+                checks.settlementMatched,
+                "Matched",
+                "Not Matched"
+            );
+
+
+            updateCheck(
+                checkApprovedWallet,
+                checks.settlementMatched,
+                "Matched",
+                "Not Matched"
+            );
+
+
+            displayPaidAmount(
+                receipt,
+                false
+            );
+
+
+            displayReceipt(
+                receipt
+            );
+
+
+            return;
+
         }
+
+
+        // =================================================
+        // NORMAL VERIFIED TRANSACTION
+        // =================================================
+
+        if (verified) {
+
+            if (resultIcon) {
+
+                resultIcon.textContent =
+                    "✓";
+
+                resultIcon.style.color =
+                    "";
+
+                resultIcon.style.background =
+                    "";
+
+            }
+
+
+            if (resultLabel) {
+
+                resultLabel.textContent =
+                    "PAYMENT VERIFIED";
+
+                resultLabel.style.color =
+                    "";
+
+            }
+
+
+            if (resultTitle) {
+
+                resultTitle.textContent =
+                    "Transaction successfully verified";
+
+            }
+
+
+            if (resultDescription) {
+
+                resultDescription.textContent =
+                    data.message ||
+                    "The transaction passed all verification checks.";
+
+            }
+
+
+            if (resultBadge) {
+
+                resultBadge.textContent =
+                    "VERIFIED";
+
+                resultBadge.style.color =
+                    "";
+
+                resultBadge.style.background =
+                    "";
+
+                resultBadge.style.borderColor =
+                    "";
+
+            }
+
+        }
+
+
+        // =================================================
+        // NORMAL REJECTED TRANSACTION
+        // =================================================
+
+        else {
+
+            if (resultIcon) {
+
+                resultIcon.textContent =
+                    "!";
+
+                resultIcon.style.color =
+                    "";
+
+                resultIcon.style.background =
+                    "";
+
+            }
+
+
+            if (resultLabel) {
+
+                resultLabel.textContent =
+                    "PAYMENT NOT VERIFIED";
+
+                resultLabel.style.color =
+                    "";
+
+            }
+
+
+            if (resultTitle) {
+
+                resultTitle.textContent =
+                    "Transaction could not be verified";
+
+            }
+
+
+            if (resultDescription) {
+
+                resultDescription.textContent =
+                    data.message ||
+                    "The transaction did not pass all verification checks.";
+
+            }
+
+
+            if (resultBadge) {
+
+                resultBadge.textContent =
+                    "NOT VERIFIED";
+
+                resultBadge.style.color =
+                    "";
+
+                resultBadge.style.background =
+                    "";
+
+                resultBadge.style.borderColor =
+                    "";
+
+            }
+
+        }
+
+
+        // =================================================
+        // VERIFICATION CHECKS
+        // =================================================
+
+        const checks =
+            data &&
+            data.checks
+                ? data.checks
+                : {};
 
 
         updateCheck(
             checkTransaction,
-            data.checks &&
-            data.checks.transactionFound === true,
-            "Transaction Found",
-            amount
+            checks.transactionFound,
+            "Passed",
+            "Not Found"
         );
 
 
         updateCheck(
             checkStatus,
-            data.checks &&
-            data.checks.transactionCompleted === true,
-            "Transaction Completed"
+            checks.transactionCompleted,
+            "Passed",
+            "Not Completed"
         );
 
 
         updateCheck(
             checkSettlement,
-            data.checks &&
-            data.checks.settlementMatched === true,
-            "Settlement Account"
+            checks.settlementMatched,
+            "Matched",
+            "Not Matched"
         );
 
 
-        if (data.receipt) {
-
-            displayReceipt(
-                data.receipt
-            );
-
-        } else if (receiptDetails) {
-
-            receiptDetails.innerHTML = `
-                <div class="empty-receipt">
-                    <span>Information</span>
-                    <strong>No receipt details available.</strong>
-                </div>
-            `;
-        }
+        updateCheck(
+            checkApprovedWallet,
+            checks.settlementMatched,
+            "Matched",
+            "Not Matched"
+        );
 
 
-        resultSection.scrollIntoView({
-            behavior: "smooth",
-            block: "start"
-        });
+        // =================================================
+        // AMOUNT
+        // =================================================
+
+        displayPaidAmount(
+            receipt,
+            verified
+        );
+
+
+        // =================================================
+        // RECEIPT DETAILS
+        // =================================================
+
+        displayReceipt(
+            receipt
+        );
+
     }
 
 
-    /* =========================================================
-       UPDATE CHECK
-    ========================================================= */
+    // =====================================================
+    // DUPLICATE BOX CLEANUP
+    // =====================================================
+
+    function clearDuplicateBox() {
+
+        const duplicateBox =
+            document.getElementById(
+                "nexelDuplicateInfo"
+            );
+
+
+        if (duplicateBox) {
+            duplicateBox.remove();
+        }
+
+    }
+
+
+    // =====================================================
+    // PAID AMOUNT + FEE BREAKDOWN
+    // =====================================================
+
+    function displayPaidAmount(
+        receipt,
+        verified
+    ) {
+
+        if (!resultCard) {
+            return;
+        }
+
+
+        const oldAmount =
+            document.getElementById(
+                "nexelPaidAmountBox"
+            );
+
+
+        if (oldAmount) {
+            oldAmount.remove();
+        }
+
+
+        const oldFee =
+            document.getElementById(
+                "nexelFeeBreakdown"
+            );
+
+
+        if (oldFee) {
+            oldFee.remove();
+        }
+
+
+        const totalPaid =
+            parseNumber(
+                receipt.total_paid_amount
+            );
+
+
+        const serviceFee =
+            parseNumber(
+                receipt.service_fee
+            );
+
+
+        const serviceFeeVat =
+            parseNumber(
+                receipt.service_fee_vat
+            );
+
+
+        let totalFee =
+            parseNumber(
+                receipt.total_fee
+            );
+
+
+        if (
+            totalFee === null &&
+            serviceFee !== null
+        ) {
+
+            totalFee =
+                serviceFee +
+                (
+                    serviceFeeVat !== null
+                        ? serviceFeeVat
+                        : 0
+                );
+
+        }
+
+
+        const paidAmount =
+            totalPaid !== null
+                ? totalPaid
+                : parseNumber(
+                    receipt.settled_amount
+                );
+
+
+        if (paidAmount !== null) {
+
+            const amountBox =
+                document.createElement(
+                    "div"
+                );
+
+
+            amountBox.id =
+                "nexelPaidAmountBox";
+
+
+            amountBox.style.cssText = `
+                margin-top:20px;
+                padding:24px 20px;
+                border-radius:16px;
+                text-align:center;
+                background:${verified ? "#f0fdf4" : "#f8fafc"};
+                border:1px solid ${verified ? "#bbf7d0" : "#e2e8f0"};
+            `;
+
+
+            amountBox.innerHTML = `
+
+                <div style="
+                    font-size:12px;
+                    font-weight:800;
+                    letter-spacing:.12em;
+                    color:${verified ? "#15803d" : "#64748b"};
+                    margin-bottom:8px;
+                ">
+                    PAID AMOUNT
+                </div>
+
+                <div style="
+                    font-size:36px;
+                    line-height:1.1;
+                    font-weight:900;
+                    color:${verified ? "#16a34a" : "#334155"};
+                ">
+                    ${formatMoney(paidAmount)} ETB
+                </div>
+
+            `;
+
+
+            const checksGrid =
+                resultCard.querySelector(
+                    ".checks-grid"
+                );
+
+
+            const duplicateBox =
+                document.getElementById(
+                    "nexelDuplicateInfo"
+                );
+
+
+            if (duplicateBox) {
+
+                duplicateBox.after(
+                    amountBox
+                );
+
+            } else if (checksGrid) {
+
+                checksGrid.before(
+                    amountBox
+                );
+
+            } else {
+
+                resultCard.appendChild(
+                    amountBox
+                );
+
+            }
+
+        }
+
+
+        if (
+            serviceFee === null &&
+            serviceFeeVat === null &&
+            totalFee === null
+        ) {
+            return;
+        }
+
+
+        const feeBox =
+            document.createElement(
+                "div"
+            );
+
+
+        feeBox.id =
+            "nexelFeeBreakdown";
+
+
+        feeBox.style.cssText = `
+            margin-top:12px;
+            padding:16px 18px;
+            border-radius:14px;
+            background:#ffffff;
+            border:1px solid #e2e8f0;
+            box-shadow:0 4px 14px rgba(15,23,42,.06);
+        `;
+
+
+        const serviceFeeText =
+            serviceFee !== null
+                ? formatMoney(serviceFee)
+                : "—";
+
+
+        const vatText =
+            serviceFeeVat !== null
+                ? formatMoney(serviceFeeVat)
+                : "—";
+
+
+        const totalFeeText =
+            totalFee !== null
+                ? formatMoney(totalFee)
+                : "—";
+
+
+        feeBox.innerHTML = `
+
+            <div style="
+                display:flex;
+                align-items:center;
+                justify-content:space-between;
+                gap:10px;
+                padding-bottom:10px;
+                margin-bottom:8px;
+                border-bottom:1px solid #e5e7eb;
+            ">
+
+                <span style="
+                    font-size:12px;
+                    font-weight:900;
+                    letter-spacing:.08em;
+                    color:#334155;
+                ">
+                    RECEIPT FEE BREAKDOWN
+                </span>
+
+                <span style="
+                    font-size:10px;
+                    font-weight:800;
+                    color:#94a3b8;
+                ">
+                    TELEBIRR
+                </span>
+
+            </div>
+
+
+            <div style="
+                display:flex;
+                justify-content:space-between;
+                gap:15px;
+                padding:7px 0;
+                font-size:14px;
+            ">
+
+                <span style="color:#64748b;">
+                    Transfer Fee
+                </span>
+
+                <strong style="color:#334155;">
+                    ${serviceFeeText} ETB
+                </strong>
+
+            </div>
+
+
+            <div style="
+                display:flex;
+                justify-content:space-between;
+                gap:15px;
+                padding:7px 0;
+                font-size:14px;
+            ">
+
+                <span style="color:#64748b;">
+                    Fee VAT
+                </span>
+
+                <strong style="color:#334155;">
+                    ${vatText} ETB
+                </strong>
+
+            </div>
+
+
+            <div style="
+                display:flex;
+                justify-content:space-between;
+                gap:15px;
+                padding-top:10px;
+                margin-top:5px;
+                border-top:1px solid #e5e7eb;
+                font-size:15px;
+            ">
+
+                <span style="
+                    font-weight:800;
+                    color:#334155;
+                ">
+                    Total Fee
+                </span>
+
+                <strong style="
+                    font-size:16px;
+                    color:#dc2626;
+                ">
+                    ${totalFeeText} ETB
+                </strong>
+
+            </div>
+
+        `;
+
+
+        const amountBox =
+            document.getElementById(
+                "nexelPaidAmountBox"
+            );
+
+
+        if (amountBox) {
+
+            amountBox.after(
+                feeBox
+            );
+
+        } else {
+
+            const duplicateBox =
+                document.getElementById(
+                    "nexelDuplicateInfo"
+                );
+
+
+            if (duplicateBox) {
+
+                duplicateBox.after(
+                    feeBox
+                );
+
+            } else {
+
+                const checksGrid =
+                    resultCard.querySelector(
+                        ".checks-grid"
+                    );
+
+
+                if (checksGrid) {
+
+                    checksGrid.before(
+                        feeBox
+                    );
+
+                } else {
+
+                    resultCard.appendChild(
+                        feeBox
+                    );
+
+                }
+
+            }
+
+        }
+
+    }
+
+
+    // =====================================================
+    // CHECK ITEMS
+    // =====================================================
 
     function updateCheck(
         element,
         passed,
-        label,
-        amount = ""
+        successText,
+        failureText
     ) {
 
         if (!element) {
@@ -658,90 +1508,71 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
 
-        element.classList.toggle(
-            "failed",
-            !passed
-        );
+        const strong =
+            element.querySelector(
+                ".check-content strong"
+            );
 
 
-        const icon =
-            passed
-                ? "✓"
-                : "×";
+        if (strong) {
 
-
-        let statusText;
-
-
-        if (label === "Settlement Account") {
-
-            statusText =
+            strong.textContent =
                 passed
-                    ? "Matched"
-                    : "Failed";
+                    ? successText
+                    : failureText;
+
+        }
+
+
+        if (passed) {
+
+            element.classList.remove(
+                "failed"
+            );
+
+
+            element.classList.add(
+                "passed"
+            );
 
         } else {
 
-            statusText =
-                passed
-                    ? "Passed"
-                    : "Failed";
+            element.classList.remove(
+                "passed"
+            );
+
+
+            element.classList.add(
+                "failed"
+            );
+
         }
 
-
-        let amountHTML = "";
-
-
-        if (
-            label === "Transaction Found" &&
-            amount
-        ) {
-
-            amountHTML = `
-                <span class="check-amount">
-                    ${escapeHTML(amount)}
-                </span>
-            `;
-        }
-
-
-        element.innerHTML = `
-            <div class="check-icon">
-                ${icon}
-            </div>
-
-            <div class="check-content">
-
-                <span>
-                    ${escapeHTML(label)}
-                </span>
-
-                <strong>
-                    ${statusText}
-                    ${amountHTML}
-                </strong>
-
-            </div>
-        `;
     }
 
 
-    /* =========================================================
-       RECEIPT
-    ========================================================= */
+    // =====================================================
+    // RECEIPT DETAILS
+    // =====================================================
 
-    function displayReceipt(receipt) {
+    function displayReceipt(
+        receipt
+    ) {
 
         if (!receiptDetails) {
             return;
         }
 
 
-        const fields = [
+        receiptDetails.innerHTML = "";
+
+
+        const rows = [
 
             [
                 "Transaction ID",
-                receipt.transaction_id
+                receipt.transaction_id ||
+                receipt.receiptNo
             ],
 
             [
@@ -751,7 +1582,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
             [
                 "Payer Telebirr No.",
-                receipt.payer_account
+                receipt.payer_account ||
+                receipt.payer_telebirr_no
             ],
 
             [
@@ -761,7 +1593,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
             [
                 "Credited Account",
-                receipt.credited_party_account
+                receipt.credited_party_account ||
+                receipt.credited_party_acc_no
             ],
 
             [
@@ -776,7 +1609,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
             [
                 "Payment Date",
-                receipt.payment_date
+                receipt.payment_date ||
+                receipt.date
             ],
 
             [
@@ -787,6 +1621,21 @@ document.addEventListener("DOMContentLoaded", () => {
             [
                 "Total Paid Amount",
                 receipt.total_paid_amount
+            ],
+
+            [
+                "Transfer Fee",
+                receipt.service_fee
+            ],
+
+            [
+                "Fee VAT",
+                receipt.service_fee_vat
+            ],
+
+            [
+                "Total Fee",
+                receipt.total_fee
             ],
 
             [
@@ -803,164 +1652,347 @@ document.addEventListener("DOMContentLoaded", () => {
                 "Payment Reason",
                 receipt.payment_reason
             ]
+
         ];
 
 
-        const availableFields =
-            fields.filter(
-                ([, value]) =>
-                    value !== undefined &&
-                    value !== null &&
-                    String(value).trim() !== ""
-            );
+        rows.forEach(function (row) {
+
+            const label =
+                row[0];
 
 
-        if (!availableFields.length) {
+            const value =
+                row[1];
 
-            receiptDetails.innerHTML = `
-                <div class="empty-receipt">
-                    <span>Information</span>
-                    <strong>No receipt details available.</strong>
-                </div>
+
+            if (
+                value === undefined ||
+                value === null ||
+                value === ""
+            ) {
+                return;
+            }
+
+
+            const item =
+                document.createElement(
+                    "div"
+                );
+
+
+            item.style.cssText = `
+                display:flex;
+                justify-content:space-between;
+                align-items:flex-start;
+                gap:20px;
+                padding:12px 0;
+                border-bottom:1px solid #f1f5f9;
             `;
 
-            return;
-        }
+
+            let displayValue =
+                String(value);
 
 
-        receiptDetails.innerHTML =
-            availableFields
-                .map(
-                    ([label, value]) => `
-                        <div class="receipt-row">
+            if (
+                label === "Settled Amount" ||
+                label === "Total Paid Amount" ||
+                label === "Transfer Fee" ||
+                label === "Fee VAT" ||
+                label === "Total Fee"
+            ) {
 
-                            <span class="receipt-label">
-                                ${escapeHTML(label)}
-                            </span>
+                const number =
+                    parseNumber(value);
 
-                            <strong class="receipt-value">
-                                ${escapeHTML(String(value))}
-                            </strong>
 
-                        </div>
-                    `
-                )
-                .join("");
+                if (number !== null) {
+
+                    displayValue =
+                        `${formatMoney(number)} ETB`;
+
+                }
+
+            }
+
+
+            item.innerHTML = `
+
+                <span style="
+                    color:#64748b;
+                    font-size:13px;
+                    font-weight:600;
+                ">
+                    ${escapeHTML(label)}
+                </span>
+
+
+                <span style="
+                    color:#1e293b;
+                    font-size:13px;
+                    font-weight:700;
+                    text-align:right;
+                    word-break:break-word;
+                    max-width:65%;
+                ">
+                    ${escapeHTML(displayValue)}
+                </span>
+
+            `;
+
+
+            receiptDetails.appendChild(
+                item
+            );
+
+        });
+
     }
 
 
-    /* =========================================================
-       ERROR
-    ========================================================= */
+    // =====================================================
+    // ERROR
+    // =====================================================
 
-    function displayError(message) {
+    function displayError(
+        message
+    ) {
 
-        if (!resultSection || !resultCard) {
-            return;
+        if (resultSection) {
+
+            resultSection.classList.remove(
+                "hidden"
+            );
+
         }
 
 
-        resultSection.classList.remove(
-            "hidden"
-        );
-
-
-        resultCard.classList.remove(
-            "verified"
-        );
-
-
-        resultCard.classList.add(
-            "failed"
-        );
+        clearDuplicateBox();
 
 
         if (resultIcon) {
-            resultIcon.textContent = "×";
+
+            resultIcon.textContent =
+                "!";
+
+            resultIcon.style.color =
+                "";
+
+            resultIcon.style.background =
+                "";
+
         }
 
 
         if (resultLabel) {
+
             resultLabel.textContent =
-                "PAYMENT NOT VERIFIED";
+                "VERIFICATION ERROR";
+
+            resultLabel.style.color =
+                "";
+
         }
 
 
         if (resultTitle) {
+
             resultTitle.textContent =
-                "Transaction could not be verified";
+                "Unable to verify transaction";
+
         }
 
 
         if (resultDescription) {
+
             resultDescription.textContent =
                 message;
+
         }
 
 
         if (resultBadge) {
+
             resultBadge.textContent =
-                "NOT VERIFIED";
+                "ERROR";
+
+            resultBadge.style.color =
+                "";
+
+            resultBadge.style.background =
+                "";
+
+            resultBadge.style.borderColor =
+                "";
+
         }
 
 
-        updateCheck(
-            checkTransaction,
-            false,
-            "Transaction Found"
-        );
-
-
-        updateCheck(
-            checkStatus,
-            false,
-            "Transaction Completed"
-        );
-
-
-        updateCheck(
-            checkSettlement,
-            false,
-            "Settlement Account"
-        );
+        clearAmountBoxes();
 
 
         if (receiptDetails) {
 
-            receiptDetails.innerHTML = `
-                <div class="empty-receipt">
-                    <span>Information</span>
-                    <strong>No receipt details available.</strong>
-                </div>
-            `;
+            receiptDetails.innerHTML =
+                "";
+
+        }
+
+    }
+
+
+    // =====================================================
+    // CLEAR RESULTS
+    // =====================================================
+
+    function clearResults() {
+
+        if (resultSection) {
+
+            resultSection.classList.add(
+                "hidden"
+            );
+
         }
 
 
-        resultSection.scrollIntoView({
-            behavior: "smooth",
-            block: "start"
-        });
+        clearDuplicateBox();
+
+        clearAmountBoxes();
+
+
+        if (receiptDetails) {
+
+            receiptDetails.innerHTML =
+                "";
+
+        }
+
     }
 
 
-    /* =========================================================
-       HTML ESCAPE
-    ========================================================= */
+    function clearAmountBoxes() {
 
-    function escapeHTML(value) {
+        const amountBox =
+            document.getElementById(
+                "nexelPaidAmountBox"
+            );
+
+
+        if (amountBox) {
+            amountBox.remove();
+        }
+
+
+        const feeBox =
+            document.getElementById(
+                "nexelFeeBreakdown"
+            );
+
+
+        if (feeBox) {
+            feeBox.remove();
+        }
+
+    }
+
+
+    // =====================================================
+    // HELPERS
+    // =====================================================
+
+    function parseNumber(
+        value
+    ) {
+
+        if (
+            value === undefined ||
+            value === null ||
+            value === ""
+        ) {
+
+            return null;
+
+        }
+
+
+        const number =
+            Number(
+                String(value)
+                    .replace(
+                        /,/g,
+                        ""
+                    )
+                    .replace(
+                        /[^0-9.-]/g,
+                        ""
+                    )
+            );
+
+
+        return Number.isFinite(number)
+            ? number
+            : null;
+
+    }
+
+
+    function formatMoney(
+        value
+    ) {
+
+        const number =
+            parseNumber(value);
+
+
+        if (number === null) {
+            return "—";
+        }
+
+
+        return number.toFixed(2);
+
+    }
+
+
+    function escapeHTML(
+        value
+    ) {
 
         return String(value)
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#039;");
+
+            .replace(
+                /&/g,
+                "&amp;"
+            )
+
+            .replace(
+                /</g,
+                "&lt;"
+            )
+
+            .replace(
+                />/g,
+                "&gt;"
+            )
+
+            .replace(
+                /"/g,
+                "&quot;"
+            )
+
+            .replace(
+                /'/g,
+                "&#039;"
+            );
+
     }
 
 
-    /* =========================================================
-       START
-    ========================================================= */
+    // =====================================================
+    // START
+    // =====================================================
 
     checkSession();
 
