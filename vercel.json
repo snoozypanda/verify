@@ -7,7 +7,7 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "http://178.104.186.233:3001/api/$1"
+      "destination": "https://cologne-gourmet-seconds-indoor.trycloudflare.com/api/$1"
     }
   ]
 }
