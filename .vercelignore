@@ -1,0 +1,8 @@
+node_modules
+server.js
+index.js
+index.backup.js
+database.js
+data
+telebirr-debug.html
+*.lnk
