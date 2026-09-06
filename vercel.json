@@ -1,4 +1,9 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "regions": ["cpt1"]
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "http://178.104.186.233:3001/$1"
+    }
+  ]
 }
